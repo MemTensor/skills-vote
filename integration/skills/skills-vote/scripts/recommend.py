@@ -1,5 +1,5 @@
 # /// script
-# dependencies = ["httpx>=0.28.1", "pydantic>=2.12.0"]
+# dependencies = ["httpx>=0.28.1", "pydantic>=2.12.0", "python-dotenv>=1.2.2"]
 # ///
 
 from __future__ import annotations

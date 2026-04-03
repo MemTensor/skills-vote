@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Any, Literal
 
 import httpx
+from dotenv import load_dotenv
 
 DEFAULT_BASE_URL = "https://api.skills.vote/api/v1"
 RETRY_ATTEMPTS = 3
@@ -26,11 +27,7 @@ def resolve_api_base_url() -> str:
 
 
 def resolve_api_key(skill_root: Path) -> str | None:
-    env_path = skill_root / ".env"
-    if env_path.is_file():
-        for line in env_path.read_text().splitlines():
-            key, value = line.split("=", 1)
-            os.environ[key] = value
+    load_dotenv(skill_root / ".env", override=True)
     return os.environ.get(API_KEY_ENV_NAME)
 
 
