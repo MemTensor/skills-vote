@@ -9,8 +9,8 @@
   <a href="https://skills.vote">
     <img alt="Website" src="https://img.shields.io/badge/Website-skills.vote-blue?style=for-the-badge&logo=google-chrome">
   </a>
-  <a href="https://opensource.org/license/apache-2-0/">
-    <img alt="License" src="https://img.shields.io/badge/License-Apache_2.0-red?style=for-the-badge&logo=apache">
+  <a href="https://opensource.org/license/mit/">
+    <img alt="License" src="https://img.shields.io/badge/License-MIT-green?style=for-the-badge&logo=opensourceinitiative&logoColor=white">
   </a>
   <a href="#quick-start">
     <img alt="Quick Start" src="https://img.shields.io/badge/Quick_Start-Ready_To_Go-yellow?style=for-the-badge&logo=rocket">
