@@ -1,0 +1,17 @@
+########## Python ##########
+# Ref: https://github.com/github/gitignore/blob/b4105e73e493bb7a20b5d7ea35efd5780ca44938/Python.gitignore
+############################
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[codz]
+*$py.class
+
+# Environments
+.env
+
+########## MacOS ##########
+# Ref: https://github.com/github/gitignore/blob/b4105e73e493bb7a20b5d7ea35efd5780ca44938/Global/macOS.gitignore
+###########################
+# General
+.DS_Store
+__MACOSX/
