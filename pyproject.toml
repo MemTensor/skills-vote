@@ -1,0 +1,50 @@
+[project]
+authors = [{ name = "MemTensor", email = "MemTensor@memtensor.cn" }]
+dependencies = [
+    "PyYAML>=6.0.3,<7.0.0",
+    "claude-agent-sdk>=0.1.50,<0.2.0",
+    "polars>=1.39.3,<2.0.0",
+    "pydantic>=2.12.5,<3.0.0",
+    "python-dotenv>=1.2.2,<2.0.0",
+]
+description = "SkillsVote: The Next-Gen Agent-Native Skill Recommendation Engine"
+license = { file = "LICENSE" }
+name = "skills_vote"
+readme = { file = "README.md", content-type = "text/markdown" }
+requires-python = ">=3.12"
+version = "1.0.0"
+
+[build-system]
+build-backend = "uv_build"
+requires = ["uv_build>=0.10.0,<0.12.0"]
+
+[tool.uv]
+python-preference = "only-managed"
+required-environments = [
+    "sys_platform == 'darwin' and platform_machine == 'arm64'",
+    "sys_platform == 'linux' and platform_machine == 'x86_64'",
+]
+
+[tool.uv.build-backend]
+module-name = "skills_vote"
+module-root = "src"
+
+[dependency-groups]
+dev = [{ include-group = "format" }]
+format = ["pre-commit", "ruff>=0.15.0,<0.16.0"]
+
+[tool.ruff]
+line-length = 88
+src = ["integration/skills/skills-vote", "scripts", "src"]
+target-version = "py312"
+
+[tool.ruff.lint]
+extend-select = ["B", "I", "SIM", "UP"]
+unfixable = ["B", "SIM"]
+
+[tool.ruff.lint.isort]
+extra-standard-library = ["typing_extensions"]
+
+[tool.ruff.format]
+docstring-code-format = true
+quote-style = "double"
