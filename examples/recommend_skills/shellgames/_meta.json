@@ -1,0 +1,17 @@
+{
+  "owner": "fabiantaboo",
+  "slug": "shellgames",
+  "displayName": "ShellGames",
+  "latest": {
+    "version": "1.0.4",
+    "publishedAt": 1771504322887,
+    "commit": "https://github.com/openclaw/skills/commit/7c42c73a6092cb8846657b439d6283fff4e0a2e8"
+  },
+  "history": [
+    {
+      "version": "1.0.3",
+      "publishedAt": 1771257558893,
+      "commit": "https://github.com/openclaw/skills/commit/ee71711f7ac830131797170955ad820542bf3695"
+    }
+  ]
+}
