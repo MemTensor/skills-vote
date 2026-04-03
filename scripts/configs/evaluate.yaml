@@ -1,0 +1,82 @@
+skills_dir: examples/evaluate_skills
+output_path: output/evaluate_results.jsonl
+num_concurrency: 2
+agent:
+  model: claude-sonnet-4-6
+  max_turns: 16
+  tools:
+    - Glob
+    - Grep
+    - Read
+    - StructuredOutput
+prompt:
+  system: |
+    Evaluate an agent skill directory:
+    skill-name/
+    ├── SKILL.md    # Required: instructions + metadata
+    ├── scripts/    # Optional: executable code
+    ├── references/ # Optional: documentation
+    └── assets/     # Optional: templates, resources
+
+    ## Task 1: Environment Analysis
+    All environment tags describe the runtime required by the agent while executing the skill itself, not the environment of generated outputs, deployed artifacts, or downstream user code. Here are the environment tags:
+    - `os`: OS families expected to work on.
+    - `write_scope`: Maximum expected write/side-effect scope when running the skill as intended. Return:
+        - `read`: no file writes.
+        - `workspace`: write only inside the workspace or a dedicated output directory; does not change system settings, services, installed software, or other machine-wide state
+        - `system`: writes outside the workspace or dedicated directory, or changes system settings, services, installed software, running processes, or other machine-wide state
+    - `privilege`: Whether the skill requires elevated privileges.
+    - `externalty`: External dependency level. Return:
+        - `offline`: no network or external account dependency is part of the
+          core skill workflow
+        - `online`: network access is part of the core workflow, but no secrets or
+          privileged account are required. Do not treat incidental dependency installation or one-time setup as `online` unless fetching/deployment/network interaction is itself part of the main skill.
+        - `secured`: secrets, authenticated accounts, or protected services are required as part of the core workflow
+    - `envs`: Environment variable names referenced or required. Never include
+      values.
+    - `bins`: Top-level executable command names required/used (canonicalized, lowercase, unversioned). Exclude package names such as `torch`, `nextjs`, etc., unless they are also invoked as standalone executables. Exclude shell builtins and basic OS utilities (e.g., `cp`, `open`, `nohup`, `kill`, and `bash`).
+    - `mcps`: MCP server identifiers required/used (canonicalized, unversioned).
+    - `environment_reason`: 3-5 sentences evidence-based justification for the environment tags.
+
+    ## Task 2: Quality Evalation
+    Here is the rubric:
+    - `consistency`: Check whether the skill clearly expresses one stable purpose and whether the rest of the skill consistently serves that purpose. E.g. coding style objective, a tool operation workflow, a PR-writing method, or another reusable task pattern, but it should be identifiable from the skill itself. Return:
+        - `true` : the skill makes a single reusable purpose identifiable from its title, description, instructions, examples, or referenced materials, and the rest of the skill consistently supports that same purpose, method, or operating scope without material conflict.
+        - `false`: the skill's core purpose remains hard to identify after reading it, or when its instructions, examples, rules, or references materially diverge from, mix with, or undermine that purpose
+    - `completeness`: Whether referenced files, scripts, assets, templates, and resources exist, necessary dependencies are discoverable from the skill artifact, and the documented usage path is followable as written. Warning: If a skill itself doesn't require executable scripts, referenced files, or dependencies, it shouldn't be false merely for "not having those things." Return:
+        - `true`:  According to the usage path used in SKILL.md, all referenced files, scripts, templates, assets, and resources actually exist && any necessary dependency declared in skill workflow must be discoverable from the skill directory.
+        - `false`: SKILL.md points to a missing required artifact | The skill workflow appears to depend on something necessary that is neither declared nor discoverable | Cannot be followed as written because a required referenced artifact is absent.
+    - `orientation`: Whether the skill helps complete tasks through actionable guidance, decision rules, checks, or lookup paths. A reference-heavy skill can still be true if it clearly supports task-oriented use. Return:
+        - `true`: the skill gives actionable guidance that helps complete the task, such as concrete steps, checks, decision rules, lookup paths, or execution guidance && any reference material is clearly connected to what the user should do
+        - `false`: when the skill is mainly descriptive, archival, or reference-heavy without explaining how the material should be used to complete the task, so that a user would still have no idea what to do next after reading it
+
+    ## Task 3: Verifiability Evaluation
+    Evaluate whether a skill is suitable for benchmark tasks with automatic verification. Skills that pass this screening will be used in the next stage to generate concrete tasks and Docker-based sandbox environments using large language models. Here is the rubric:
+    - `success_verifiability`: Whether success can be judged programmatically with low ambiguity from the final artifact, execution result, or resulting environment state. Return:
+        - `true`: If success can be checked with a reliable verifier such as exact match, schema/constraint validation, unit/integration tests, query result checks, file diff checks, compiler/runtime checks, or API/DB/DOM state assertions.
+        - `false`: If success is mainly subjective, preference-based, open-ended, or relies primarily on human/LLM judgment. Approximate proxy metrics alone (e.g. similarity scores, ROUGE/BLEU, style preference) do NOT count as strong verification.
+        - `null`: If the skill is underspecified or too broad to determine whether a low-ambiguity verifier exists.
+    - `environment_controllability`: Whether a representative task environment for this skill can be instantiated, reset, and executed inside a Docker-based sandbox generated from a textual specification (e.g. Dockerfile plus local setup assets such as seed data, mock services, startup scripts, or frozen snapshots), while preserving the core semantics of the skill. Return:
+        - `true`: If the environment can be built and run reproducibly in a containerized sandbox, with deterministic initialization and reset. Required tools, files, databases, websites, APIs, and side effects can be installed, bundled, mocked, replayed, or frozen locally, so repeated runs are comparable. The sandbox still preserves the essential nature of the skill.
+        - `false`: If the skill fundamentally depends on real external systems, privileged/private accounts, live or changing web content, real-time information, real humans, unstable third-party services, or side effects that cannot be faithfully reproduced inside a Docker-based sandbox. Also return false if mocking/sandboxing would remove the essential property of the skill.
+        - `null`: If it is unclear whether a faithful Docker-based sandbox can be specified from the skill description, or the skill is too broad / underspecified to determine.
+    - `task_constructability`: Whether many task instances and their verifiers / gold outcomes can be created at reasonable cost. Return:
+        - `true`: If tasks can be templated, synthesized, sampled from existing datasets, generated from programs/policies, or otherwise scaled with low manual effort.
+        - `false`: If each task would require bespoke manual authoring, manual gold creation, or expensive manual judging.
+        - `null`: If scalability is unclear from the skill description.
+
+    ## Common Evidence Rules
+    - Read `SKILL.md` first.
+    - Inspect other files inside the target skill root only when needed.
+    - Use only evidence from the target skill root unless `SKILL.md` explicitly references a parent-level file by relative path.
+    - If evidence is insufficient or mixed, use `[]` for list fields and `null` for nullable scalar decisions.
+
+    ## Decision Rules
+    - Every reason field must be non-empty, 3-5 sentences evidence-based explanation.
+    - Do not add summaries, scores, confidence, or extra fields.
+    - Files may be large. Do not read an entire file at once.
+
+    ## Output Format
+    Must call `StructuredOutput` Tool to stop output.
+  user: |
+    Here is the path to the agent skill directory to be analyzed: `{skill_dir}`.
