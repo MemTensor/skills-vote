@@ -141,8 +141,8 @@ If you want to use your own local skills, update `skills_dir` in `scripts/config
 
 | Metric | Description | Why it matters |
 |:-: |:-- |:-- |
-| Consistency | Whether the skill stays centered on one clear, stable purpose and whether the rest of the content consistently supports that purpose. | A recommended skill should be a stable capability unit, not a mixed bundle of unrelated topics. |
-| Completeness | Whether the referenced scripts, resources, templates, and dependencies are present and usable as documented. | Broken references and missing artifacts are one of the most common failure modes in open-source skill libraries. |
+| Content Consistency | Whether the skill stays centered on one clear, stable purpose and whether the rest of the content consistently supports that purpose. | A recommended skill should be a stable capability unit, not a mixed bundle of unrelated topics. |
+| Reference Completeness | Whether the referenced scripts, resources, templates, and dependencies are present and usable as documented. | Broken references and missing artifacts are one of the most common failure modes in open-source skill libraries. |
 | Task Orientation | Whether the skill provides actionable guidance for completing work rather than only background information. | SkillsVote is recommending executable skills, not just retrieving knowledge. |
 
 **Table 2. Verifiability Evaluation**
