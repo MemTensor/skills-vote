@@ -1,6 +1,8 @@
 ---
 name: skills-vote
 description: Find the most relevant external agent skills for the current task, then submit grounded feedback about which skills were actually used and useful in the same session. Whenever you start a task, use this skill first.
+metadata:
+  version: "1.0"
 ---
 
 # Skill Discovery And Feedback

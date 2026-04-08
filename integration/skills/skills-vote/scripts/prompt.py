@@ -148,7 +148,9 @@ def render_recommend_success(
     failed_skills = list(failed_skills)
     installed_block = ", ".join(f"`{name}`" for name in installed_skills) or "none"
     if installed_skills and not invalid_token_skills and not failed_skills:
-        download_block = f"All skills downloaded successfully to {download_dir}."
+        download_block = (
+            f"All requested skills are ready in {download_dir}: {installed_block}."
+        )
     elif not installed_skills:
         download_block = f"All skills failed to download to {download_dir}."
         if invalid_token_skills and not failed_skills:
@@ -167,7 +169,7 @@ def render_recommend_success(
         failed_count = len(failed_entries)
         failed_label = "skill" if failed_count == 1 else "skills"
         download_block = (
-            f"Downloaded {installed_count} {installed_label} successfully to {download_dir}: "
+            f"Ready {installed_count} {installed_label} in {download_dir}: "
             f"{installed_block}\n"
             f"Failed to download {failed_count} {failed_label}: "
             + ", ".join(failed_entries)
