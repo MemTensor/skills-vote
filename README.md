@@ -9,6 +9,12 @@
   <a href="https://skills.vote">
     <img alt="Website" src="https://img.shields.io/badge/Website-skills.vote-blue?style=for-the-badge&logo=google-chrome">
   </a>
+  <a href="https://mp.weixin.qq.com/s/fA4DbNnCVbsToOt886VcfQ">
+    <img alt="WeChat Blog" src="https://img.shields.io/badge/WeChat-Blog_Post-07C160?style=for-the-badge&logo=wechat&logoColor=white">
+  </a>
+  <a href="http://xhslink.com/o/9c53b8USOxK">
+    <img alt="rednote" src="https://img.shields.io/badge/rednote-Post-FF2442?style=for-the-badge">
+  </a>
   <a href="https://opensource.org/license/mit/">
     <img alt="License" src="https://img.shields.io/badge/License-MIT-green?style=for-the-badge&logo=opensourceinitiative&logoColor=white">
   </a>
@@ -43,6 +49,7 @@ This is the **open-source, local-first core** of SkillsVote. It equips you with:
 
 ## 📰 Latest News
 
+- 📣 **[2026-04-08] Social Launch.** Our launch announcement is now live on [WeChat Blog](https://mp.weixin.qq.com/s/fA4DbNnCVbsToOt886VcfQ) and [rednote](http://xhslink.com/o/9c53b8USOxK).
 - 🚀 **[2026-04-03] Launch Day!** Published the very first open-source release of our recommendation and evaluation demos.
 
 ## ✨ Key Features
