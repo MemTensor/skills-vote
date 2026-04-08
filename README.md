@@ -43,7 +43,7 @@ This is the **open-source, local-first core** of SkillsVote. It equips you with:
 
 ## 📰 Latest News
 
-- 🚀 **[2026-04-03] Launch Day!** Published the very first open-source release of our recommend and evaluate demos.
+- 🚀 **[2026-04-03] Launch Day!** Published the very first open-source release of our recommendation and evaluation demos.
 
 ## ✨ Key Features
 
