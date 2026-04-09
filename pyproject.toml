@@ -29,6 +29,11 @@ required-environments = [
 module-name = "skills_vote"
 module-root = "src"
 
+[[tool.uv.index]]
+default = true
+name = "pypi"
+url = "https://pypi.org/simple"
+
 [dependency-groups]
 dev = [{ include-group = "format" }]
 format = ["pre-commit", "ruff>=0.15.0,<0.16.0"]
