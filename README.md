@@ -49,6 +49,7 @@ This is the **open-source, local-first core** of SkillsVote. It equips you with:
 
 ## 📰 Latest News
 
+- 🌅 **[2026-04-09] Special Share.** Core contributor's share on [Linux.do](https://linux.do).
 - 📣 **[2026-04-08] Social Launch.** Our launch announcement is now live on [WeChat Blog](https://mp.weixin.qq.com/s/fA4DbNnCVbsToOt886VcfQ) and [rednote](http://xhslink.com/o/9c53b8USOxK).
 - 🚀 **[2026-04-03] Launch Day!** Published the very first open-source release of our recommendation and evaluation demos.
 
