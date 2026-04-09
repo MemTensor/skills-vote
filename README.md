@@ -74,10 +74,11 @@ For a detailed breakdown of the quality and verifiability criteria used in our e
 Supercharge your agents (Codex, Claude Code, OpenClaw) by integrating SkillsVote directly! Just drop this prompt into your agent:
 
 ```markdown
-1. Install the skill by running `npx skills add MemTensor/skills-vote --skill skills-vote`
-2. Create or update `.env` file located in the root directory of the installed `skills-vote` skill and set `SKILLS_VOTE_API_KEY="YOUR_API_KEY"`
+Fetch and follow installation instructions from https://raw.githubusercontent.com/MemTensor/skills-vote/main/docs/INSTALL.md
 
-Do not configure this as a system or user-level environment variable unless explicitly requested.
+Use the following values: 
+`SKILLS_VOTE_API_KEY`: `YOUR_API_KEY`
+`GITHUB_TOKEN`:`YOUR_GH_TOKEN`
 ```
 
 #### 🔧 Manual Setup Alternative
