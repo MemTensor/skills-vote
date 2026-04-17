@@ -1,0 +1,30 @@
+skill_library:
+  include:
+    - /path/to/your-skill-library/**/SKILL.md
+  exclude:
+    - "**/.git/**"
+    - "**/.venv/**"
+    - "**/node_modules/**"
+    - "**/__pycache__/**"
+  extend_include: []
+  extend_exclude: []
+
+chroma:
+  path: ../output/chroma/skills_vote_local
+  collection: skills_vote_local
+
+embedding:
+  provider: openai-compatible
+  model: text-embedding-3-large
+  dimensions: 3072
+  api_key_env: OPENAI_API_KEY
+  api_key: sk-xx
+  base_url: https://api.openai.com/v1
+  extra_headers: {}
+
+retrieval:
+  top_k: 20
+  final_k: 5
+
+indexing:
+  update_on_start: true
