@@ -68,13 +68,12 @@ Notes:
 
 ```yaml
 retrieval:
-  top_k: 20
+  top_k: 5
   final_k: 5
 ```
 
 - `top_k`: default Chroma recall size, can be overridden per query with `scripts/recommend.py --top-k N`
-- `final_k`: default final returned candidate count after truncation
-- if `top_k < final_k`, the returned count is clamped to `top_k`
+- `final_k`: reserved for future use; keep it in config, but it is not used by the current implementation
 
 ## `indexing`
 

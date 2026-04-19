@@ -120,7 +120,7 @@ def load_config(config_path: str | Path) -> dict:
     embedding.setdefault("base_url", "https://api.openai.com/v1")
     embedding.setdefault("extra_headers", {})
 
-    retrieval.setdefault("top_k", 10)
+    retrieval.setdefault("top_k", 5)
     retrieval.setdefault("final_k", 5)
 
     auto_update = indexing.get("update_on_start")
@@ -159,22 +159,43 @@ def _validate_config(config: dict) -> None:
             "Replace placeholder paths in skill_library.include with real skill globs"
         )
 
+    retrieval = config["retrieval"]
+    _require_positive_int(retrieval.get("top_k", 5), "retrieval.top_k")
+
+    embedding = config["embedding"]
+    if embedding.get("provider", "hashing") == "hashing":
+        _require_positive_int(embedding.get("dimensions", 256), "embedding.dimensions")
+
+
+def _require_positive_int(value: object, label: str) -> int:
+    try:
+        numeric_value = int(value)
+    except (TypeError, ValueError) as exc:
+        raise ValueError(f"{label} must be a positive integer") from exc
+    if numeric_value < 1:
+        raise ValueError(f"{label} must be a positive integer")
+    return numeric_value
+
 
 def parse_frontmatter(raw_text: str) -> tuple[dict, str]:
     stripped = raw_text.lstrip()
-    if not stripped.startswith("---"):
+    lines = stripped.splitlines(keepends=True)
+    if not lines or lines[0].strip() != "---":
         return {}, raw_text
 
-    parts = stripped.split("---", 2)
-    if len(parts) < 3:
+    end_index = next(
+        (index for index, line in enumerate(lines[1:], start=1) if line.strip() == "---"),
+        None,
+    )
+    if end_index is None:
         return {}, raw_text
 
     try:
-        frontmatter = yaml.safe_load(parts[1]) or {}
+        frontmatter = yaml.safe_load("".join(lines[1:end_index])) or {}
     except yaml.YAMLError:
         frontmatter = {}
 
-    body = parts[2].lstrip("\n")
+    body = "".join(lines[end_index + 1 :]).lstrip("\r\n")
     return frontmatter if isinstance(frontmatter, dict) else {}, body
 
 
@@ -304,7 +325,7 @@ def _build_skill_document_from_metadata(
         path=str(skill_path.resolve()),
         content_hash=str(metadata.get("content_hash") or ""),
         content_mtime_ns=stat_result.st_mtime_ns,
-        content_size_bytes=stored_size or stat_result.st_size,
+        content_size_bytes=stored_size if stored_size is not None else stat_result.st_size,
     )
 
 
@@ -557,14 +578,10 @@ def recommend_local_skills(
                 raise_collection_rebuild_required(exc)
             raise
 
-    query_top_k = int(top_k_override or config["retrieval"].get("top_k", 10))
-    if query_top_k < 1:
-        raise ValueError("top_k must be >= 1")
-
-    final_k = int(config["retrieval"].get("final_k", 5))
-    if final_k < 1:
-        raise ValueError("final_k must be >= 1")
-    final_k = min(final_k, query_top_k)
+    query_top_k = _require_positive_int(
+        config["retrieval"].get("top_k", 5) if top_k_override is None else top_k_override,
+        "top_k",
+    )
 
     try:
         results = query_collection(
@@ -579,12 +596,13 @@ def recommend_local_skills(
         raise
 
     candidates = build_candidates(results)
-    selected = candidates[:final_k]
     return {
         "rewritten_query": rewritten_query,
-        "candidates": [candidate.as_dict() for candidate in selected],
-        "selected_skills": [candidate.skill_name for candidate in selected],
+        "candidates": [candidate.as_dict() for candidate in candidates],
+        "selected_skills": [candidate.skill_name for candidate in candidates],
     }
+
+
 def build_candidates(results: dict) -> list[RecommendCandidate]:
     metadatas = (results.get("metadatas") or [[]])[0]
     distances = (results.get("distances") or [[]])[0]

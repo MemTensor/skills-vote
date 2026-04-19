@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from contextlib import suppress
 from typing import Callable, Protocol
 
 COLLECTION_DELETE_BATCH_SIZE = 1024
@@ -37,8 +36,13 @@ def get_collection(client, config: dict):
 
 
 def reset_collection(client, config: dict) -> None:
-    with suppress(Exception):
-        client.delete_collection(config["chroma"]["collection"])
+    collection_name = config["chroma"]["collection"]
+    existing_names = {
+        getattr(collection, "name", collection) for collection in client.list_collections()
+    }
+    if collection_name not in existing_names:
+        return
+    client.delete_collection(collection_name)
 
 
 def upsert_documents(

@@ -23,7 +23,7 @@ embedding:
   extra_headers: {}
 
 retrieval:
-  top_k: 20
+  top_k: 5
   final_k: 5
 
 indexing:

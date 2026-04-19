@@ -42,8 +42,8 @@ If you want a wider recall window for one query, pass `--top-k N`.
 
 Output fields:
 
-- `selected_skills`: final top skill names
-- `candidates`: returned candidates with path, description, and score
+- `selected_skills`: returned top-k skill names
+- `candidates`: returned top-k candidates with path, description, and score
 
 ## Config
 
