@@ -5,69 +5,43 @@ description: Use when retrieving the most relevant skills for a user request fro
 
 # Skills Vote Local
 
+Read only this file first.
+
 This skill retrieves the most relevant skills for a user request from a local or private skill library.
 
-Use it like this:
+## Delegate skill lookup to a subagent
 
-- `rewrite query -> retrieve top candidates from the local skill library`
+Prefer this path whenever you can call a subagent.
 
-## Before you run anything
+Do not read `doc/handoff.md` yourself unless you are actually acting as the delegated subagent.
 
-- Work from this skill root directory.
+If you can call a subagent, let the subagent handle the skill lookup for you.
 
-## Workflow
+A fast lightweight subagent is usually enough for the first retrieval pass.
 
-### 1. Rewrite the query
+Point it to `doc/handoff.md`.
 
-`scripts/recommend.py` expects a rewritten, retrieval-oriented query; it does not rewrite for you.
-
-Rewrite the original request into a short, standalone, retrieval-oriented query.
-
-Rules:
-
-- Preserve the original task's domain terms and key intent words.
-- Rewrite for retrieval, not task execution.
-- Keep it short, standalone, and searchable.
+If the subagent may not inherit this working directory, give it the explicit handoff path.
 
 Example:
 
-- raw: `make a PR for it`
-- rewritten: `Prepare, review, and open a pull request for an existing change.`
-
-### 2. Optional: run the environment check
-
-Run the environment check before retrieval when setting up or debugging the skill.
-
-```bash
-uv run -qq python scripts/check_env.py
+```text
+You need to read /path/to/skills-vote-local/doc/handoff.md
+and recommend skills for me with the task:
+<self-contained task description>
 ```
 
-### 3. Run retrieval
+Make the task description self-contained. Do not assume the subagent has your full context.
 
-```bash
-uv run -qq python scripts/recommend.py \
-  -q "Retrieve the most relevant local skills for preparing, reviewing, and opening a pull request for an existing change."
-```
+Include the objective, the key domain terms, any relevant constraints, and the current artifact or situation when that context matters.
 
-If you want a wider recall window for one query, pass `--top-k N`.
+The subagent should start from `doc/handoff.md`, run retrieval, and only read more files when it needs better recommendation quality or config/debug context.
 
-Output fields:
+## If you cannot call a subagent
 
-- `selected_skills`: final top skill names
-- `candidates`: returned candidates with path, description, and score
+Only do this when you cannot call a subagent, or when the user explicitly wants you to run the lookup yourself.
 
-## Config
+Read `doc/usage_reference.md` and follow the workflow there yourself.
 
-- The expected live config location is `config/config.yaml`.
-- If the config is already prepared, use it as-is.
-- Read `doc/config-schema.md` only when you need to create or edit the config.
-
-## Notes
-
-- Before querying, `scripts/recommend.py` automatically runs incremental `update`.
-- You usually do not need to rebuild the index manually.
-- If you want a full rebuild, run:
-
-```bash
-uv run -qq python scripts/index.py
-```
+- `doc/usage_reference.md` is the direct-use workflow
+- `doc/config-schema.md` is only for creating or editing config
