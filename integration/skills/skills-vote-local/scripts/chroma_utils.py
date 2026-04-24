@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import Callable, Protocol
+from collections.abc import Callable, Iterator
+from typing import Protocol
 
 COLLECTION_DELETE_BATCH_SIZE = 1024
 COLLECTION_UPSERT_BATCH_SIZE = 128
@@ -21,6 +22,11 @@ class ChromaDocument(Protocol):
 EmbedTexts = Callable[[list[str], dict], list[list[float]]]
 
 
+def _batched[T](items: list[T], batch_size: int) -> Iterator[list[T]]:
+    for start in range(0, len(items), batch_size):
+        yield items[start : start + batch_size]
+
+
 def create_client(chroma_path: str):
     from chromadb import PersistentClient
 
@@ -37,12 +43,17 @@ def get_collection(client, config: dict):
 
 def reset_collection(client, config: dict) -> None:
     collection_name = config["chroma"]["collection"]
-    existing_names = {
-        getattr(collection, "name", collection) for collection in client.list_collections()
-    }
+    existing_names = _collection_names(client)
     if collection_name not in existing_names:
         return
     client.delete_collection(collection_name)
+
+
+def _collection_names(client) -> set[str]:
+    return {
+        str(getattr(collection, "name", collection))
+        for collection in client.list_collections()
+    }
 
 
 def upsert_documents(
@@ -55,8 +66,7 @@ def upsert_documents(
     if not documents:
         return
 
-    for start in range(0, len(documents), COLLECTION_UPSERT_BATCH_SIZE):
-        batch = documents[start : start + COLLECTION_UPSERT_BATCH_SIZE]
+    for batch in _batched(documents, COLLECTION_UPSERT_BATCH_SIZE):
         retrieval_texts = [document.retrieval_text() for document in batch]
         embeddings = embed_texts(retrieval_texts, config)
         collection.upsert(
@@ -87,8 +97,7 @@ def delete_documents(collection, document_ids: list[str]) -> None:
     if not document_ids:
         return
 
-    for start in range(0, len(document_ids), COLLECTION_DELETE_BATCH_SIZE):
-        batch = document_ids[start : start + COLLECTION_DELETE_BATCH_SIZE]
+    for batch in _batched(document_ids, COLLECTION_DELETE_BATCH_SIZE):
         collection.delete(ids=batch)
 
 

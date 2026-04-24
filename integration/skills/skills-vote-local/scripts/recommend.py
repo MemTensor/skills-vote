@@ -33,7 +33,7 @@ def main() -> None:
     try:
         response = recommend_local_skills(args.query, config, top_k_override=args.top_k)
     except RuntimeError as exc:
-        raise SystemExit(str(exc))
+        raise SystemExit(str(exc)) from None
     print(json.dumps(response, ensure_ascii=False, indent=2))
 
 

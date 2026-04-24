@@ -1,3 +1,10 @@
+routing:
+  mode: subagent_multi_pass
+  max_passes: 3
+
+retrieval_context:
+  mode: recommend_plus_skill_md
+
 skill_library:
   include:
     - /path/to/your-skill-library/**/SKILL.md
@@ -18,7 +25,7 @@ embedding:
   model: bge-m3
   dimensions: 1024
   api_key_env: OPENAI_API_KEY
-  api_key: sk-xx
+  api_key: ""
   base_url: https://api.openai.com/v1
   extra_headers: {}
 

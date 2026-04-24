@@ -6,6 +6,39 @@ Use `config/config.yaml` as the live config file when needed.
 
 - place an example or starter config at `config/config.yaml.example` when useful
 
+## `routing`
+
+```yaml
+routing:
+  mode: subagent_multi_pass
+  max_passes: 3
+```
+
+- `mode`: controls which agent performs vector retrieval and whether retrieval is single-pass or multi-pass
+- allowed values:
+  - `main_single_pass`
+  - `main_multi_pass`
+  - `subagent_single_pass`
+  - `subagent_multi_pass`
+- `delegate_to_subagent` is deprecated and is not a supported alias
+- invalid values cause `scripts/route_prompt.py` to print a warning and fall back to `subagent_multi_pass`
+- `max_passes`: maximum retrieval passes for multi-pass workflows; defaults to `3`
+
+## `retrieval_context`
+
+```yaml
+retrieval_context:
+  mode: recommend_plus_skill_md
+```
+
+- controls how much candidate skill content the retrieval actor must inspect during recommendation
+- applies to the agent that actually performs retrieval
+- allowed values:
+  - `recommend_only`
+  - `recommend_plus_skill_md`
+  - `recommend_plus_skill_dir`
+- this policy only controls recommendation-time evidence; after a skill is selected for actual task execution, the execution agent may read the selected skill's `SKILL.md`
+
 ## `skill_library`
 
 ```yaml
@@ -61,7 +94,9 @@ Supported providers:
 Notes:
 
 - `api_key` takes precedence when both are present
-- `dimensions` is used by the local `hashing` provider
+- default embedding settings are `openai-compatible`, `bge-m3`, and `1024` dimensions
+- `model` defaults to `bge-m3`; the local `hashing` provider ignores it
+- `dimensions` defaults to `1024`; it is used directly by the local `hashing` provider
 - `base_url` should point to an OpenAI-compatible embeddings endpoint
 
 ## `retrieval`

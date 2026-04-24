@@ -1,6 +1,8 @@
 # skills-vote-local usage reference
 
-Use this document when you need to run `skills-vote-local` yourself instead of delegating the lookup to a subagent.
+The normal entrypoint is `scripts/route_prompt.py`.
+
+Use this document only when `route_prompt.py` fails, when debugging, or when the user explicitly asks for the direct workflow.
 
 Work from this skill root directory.
 

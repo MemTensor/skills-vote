@@ -35,7 +35,10 @@ def check_uv() -> dict[str, object]:
 
 
 def check_config(config_path: Path) -> dict[str, object]:
-    result: dict[str, object] = {"path": str(config_path), "exists": config_path.exists()}
+    result: dict[str, object] = {
+        "path": str(config_path),
+        "exists": config_path.exists(),
+    }
     if not config_path.exists():
         result["ok"] = False
         result["message"] = "Config file not found."

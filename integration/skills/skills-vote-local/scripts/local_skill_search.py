@@ -28,6 +28,14 @@ from chroma_utils import (
 TOKEN_RE = re.compile(r"[a-zA-Z0-9_./+-]+")
 RETRIEVAL_TEXT_VERSION = "title-description-v1"
 SKILL_FILE_NAME = "SKILL.md"
+DEFAULT_CHROMA_PATH = "../output/chroma/skills_vote_local"
+DEFAULT_COLLECTION_NAME = "skills_vote_local"
+DEFAULT_EMBEDDING_PROVIDER = "openai-compatible"
+DEFAULT_EMBEDDING_MODEL = "bge-m3"
+DEFAULT_EMBEDDING_DIMENSIONS = 1024
+DEFAULT_EMBEDDING_API_KEY_ENV = "OPENAI_API_KEY"
+DEFAULT_EMBEDDING_BASE_URL = "https://api.openai.com/v1"
+DEFAULT_TOP_K = 5
 DEFAULT_INCLUDE_PATTERNS = ("**/SKILL.md",)
 DEFAULT_EXCLUDE_PATTERNS = (
     "**/.git/**",
@@ -73,7 +81,9 @@ class RecommendCandidate:
 
     @classmethod
     def from_query_result(cls, metadata: dict, distance: object) -> RecommendCandidate:
-        title = str(metadata.get("title") or metadata.get("skill_name") or "unknown-skill")
+        title = str(
+            metadata.get("title") or metadata.get("skill_name") or "unknown-skill"
+        )
         return cls(
             skill_name=title,
             path=str(metadata.get("path") or ""),
@@ -92,16 +102,26 @@ class RecommendCandidate:
 
 def load_config(config_path: str | Path) -> dict:
     config_path = Path(config_path).resolve()
-    raw = yaml.safe_load(config_path.read_text(encoding="utf-8")) or {}
-    if not isinstance(raw, dict):
-        raise ValueError("Config root must be a YAML object")
+    config = _read_config_yaml(config_path)
+    _apply_config_defaults(config)
+    _normalize_config(config, config_path.parent)
+    _validate_config(config)
+    return config
 
-    base_dir = config_path.parent
-    skill_library = raw.setdefault("skill_library", {})
-    chroma = raw.setdefault("chroma", {})
-    embedding = raw.setdefault("embedding", {})
-    retrieval = raw.setdefault("retrieval", {})
-    indexing = raw.setdefault("indexing", {})
+
+def _read_config_yaml(config_path: Path) -> dict:
+    config = yaml.safe_load(config_path.read_text(encoding="utf-8")) or {}
+    if not isinstance(config, dict):
+        raise ValueError("Config root must be a YAML object")
+    return config
+
+
+def _apply_config_defaults(config: dict) -> None:
+    skill_library = config.setdefault("skill_library", {})
+    chroma = config.setdefault("chroma", {})
+    embedding = config.setdefault("embedding", {})
+    retrieval = config.setdefault("retrieval", {})
+    config.setdefault("indexing", {})
 
     skill_library.setdefault("roots", [])
     skill_library.setdefault("include", list(DEFAULT_INCLUDE_PATTERNS))
@@ -109,19 +129,25 @@ def load_config(config_path: str | Path) -> dict:
     skill_library.setdefault("extend_include", [])
     skill_library.setdefault("extend_exclude", [])
 
-    chroma.setdefault("path", "../output/chroma/skills_vote_local")
-    chroma.setdefault("collection", "skills_vote_local")
+    chroma.setdefault("path", DEFAULT_CHROMA_PATH)
+    chroma.setdefault("collection", DEFAULT_COLLECTION_NAME)
 
-    embedding.setdefault("provider", "hashing")
-    embedding.setdefault("model", "simple-hash-v1")
-    embedding.setdefault("dimensions", 256)
-    embedding.setdefault("api_key_env", "OPENAI_API_KEY")
+    embedding.setdefault("provider", DEFAULT_EMBEDDING_PROVIDER)
+    embedding.setdefault("model", DEFAULT_EMBEDDING_MODEL)
+    embedding.setdefault("dimensions", DEFAULT_EMBEDDING_DIMENSIONS)
+    embedding.setdefault("api_key_env", DEFAULT_EMBEDDING_API_KEY_ENV)
     embedding.setdefault("api_key", "")
-    embedding.setdefault("base_url", "https://api.openai.com/v1")
+    embedding.setdefault("base_url", DEFAULT_EMBEDDING_BASE_URL)
     embedding.setdefault("extra_headers", {})
 
-    retrieval.setdefault("top_k", 5)
-    retrieval.setdefault("final_k", 5)
+    retrieval.setdefault("top_k", DEFAULT_TOP_K)
+    retrieval.setdefault("final_k", DEFAULT_TOP_K)
+
+
+def _normalize_config(config: dict, base_dir: Path) -> None:
+    skill_library = config["skill_library"]
+    chroma = config["chroma"]
+    indexing = config["indexing"]
 
     auto_update = indexing.get("update_on_start")
     if auto_update is None:
@@ -133,9 +159,6 @@ def load_config(config_path: str | Path) -> dict:
         skill_library,
     )
     chroma["path"] = str(_resolve(base_dir, chroma["path"]))
-
-    _validate_config(raw)
-    return raw
 
 
 def _resolve(base_dir: Path, raw_path: str) -> Path:
@@ -153,18 +176,31 @@ def _validate_config(config: dict) -> None:
         if str(pattern).strip()
     ]
     if not include_patterns:
-        raise ValueError("skill_library.include must contain at least one real glob pattern")
+        raise ValueError(
+            "skill_library.include must contain at least one real glob pattern"
+        )
     if any("/absolute/path/to/" in pattern for pattern in include_patterns):
         raise ValueError(
             "Replace placeholder paths in skill_library.include with real skill globs"
         )
 
     retrieval = config["retrieval"]
-    _require_positive_int(retrieval.get("top_k", 5), "retrieval.top_k")
+    _require_positive_int(retrieval.get("top_k", DEFAULT_TOP_K), "retrieval.top_k")
 
     embedding = config["embedding"]
-    if embedding.get("provider", "hashing") == "hashing":
-        _require_positive_int(embedding.get("dimensions", 256), "embedding.dimensions")
+    provider = embedding.get("provider", DEFAULT_EMBEDDING_PROVIDER)
+    if provider == "hashing":
+        _require_positive_int(
+            embedding.get("dimensions", DEFAULT_EMBEDDING_DIMENSIONS),
+            "embedding.dimensions",
+        )
+    elif (
+        provider == "openai-compatible"
+        and not str(embedding.get("model") or "").strip()
+    ):
+        raise ValueError(
+            "embedding.model is required when embedding.provider is openai-compatible"
+        )
 
 
 def _require_positive_int(value: object, label: str) -> int:
@@ -184,7 +220,11 @@ def parse_frontmatter(raw_text: str) -> tuple[dict, str]:
         return {}, raw_text
 
     end_index = next(
-        (index for index, line in enumerate(lines[1:], start=1) if line.strip() == "---"),
+        (
+            index
+            for index, line in enumerate(lines[1:], start=1)
+            if line.strip() == "---"
+        ),
         None,
     )
     if end_index is None:
@@ -236,7 +276,8 @@ def _build_scan_include_patterns(base_dir: Path, skill_library: dict) -> list[st
     include_patterns = _collect_patterns(skill_library.get("include"))
     extend_include_patterns = _collect_patterns(skill_library.get("extend_include"))
     legacy_roots = [
-        _resolve(base_dir, root) for root in _collect_patterns(skill_library.get("roots"))
+        _resolve(base_dir, root)
+        for root in _collect_patterns(skill_library.get("roots"))
     ]
 
     def resolve_patterns(patterns: list[str]) -> list[str]:
@@ -252,14 +293,16 @@ def _build_scan_include_patterns(base_dir: Path, skill_library: dict) -> list[st
                 resolved_patterns.append(os.path.normpath(str(root / pattern)))
         return resolved_patterns
 
-    return resolve_patterns(include_patterns) + resolve_patterns(extend_include_patterns)
+    return resolve_patterns(include_patterns) + resolve_patterns(
+        extend_include_patterns
+    )
 
 
-def _should_scan_path(absolute_path: str, skill_library: dict) -> bool:
+def _should_scan_path(skill_path: Path, skill_library: dict) -> bool:
     excludes = list(skill_library.get("exclude", [])) + list(
         skill_library.get("extend_exclude", [])
     )
-    return not (excludes and _matches_any(absolute_path, excludes))
+    return not (excludes and _matches_any(skill_path.as_posix(), excludes))
 
 
 def _is_current_skill(skill_path: Path) -> bool:
@@ -268,6 +311,22 @@ def _is_current_skill(skill_path: Path) -> bool:
 
 def _build_skill_id(skill_root: Path) -> str:
     return f"local:path:{hashlib.sha256(str(skill_root).encode('utf-8')).hexdigest()}"
+
+
+def _is_scannable_skill_path(
+    skill_path: Path,
+    skill_library: dict,
+    seen_paths: set[Path],
+) -> bool:
+    if skill_path.name != SKILL_FILE_NAME:
+        return False
+    if not skill_path.is_file():
+        return False
+    if skill_path in seen_paths:
+        return False
+    if _is_current_skill(skill_path):
+        return False
+    return _should_scan_path(skill_path, skill_library)
 
 
 def _build_skill_document_from_bytes(
@@ -325,7 +384,9 @@ def _build_skill_document_from_metadata(
         path=str(skill_path.resolve()),
         content_hash=str(metadata.get("content_hash") or ""),
         content_mtime_ns=stat_result.st_mtime_ns,
-        content_size_bytes=stored_size if stored_size is not None else stat_result.st_size,
+        content_size_bytes=stored_size
+        if stored_size is not None
+        else stat_result.st_size,
     )
 
 
@@ -343,9 +404,31 @@ def _can_reuse_cached_document(
     if stored_mtime != stat_result.st_mtime_ns:
         return False
     stored_size = _coerce_int(metadata.get("content_size_bytes"))
-    if stored_size is not None and stored_size != stat_result.st_size:
-        return False
-    return True
+    return stored_size is None or stored_size == stat_result.st_size
+
+
+def _materialize_one_skill_document(
+    skill_path: Path,
+    metadata_index: dict[str, dict],
+) -> SkillDocument | None:
+    try:
+        stat_result = skill_path.stat()
+    except OSError:
+        return None
+
+    skill_id = _build_skill_id(skill_path.parent.resolve())
+    metadata = metadata_index.get(skill_id)
+    if _can_reuse_cached_document(stat_result, metadata):
+        return _build_skill_document_from_metadata(
+            skill_path,
+            stat_result=stat_result,
+            metadata=metadata or {},
+        )
+
+    try:
+        return build_skill_document(skill_path, stat_result=stat_result)
+    except (OSError, UnicodeError):
+        return None
 
 
 def discover_skill_paths(config: dict) -> list[Path]:
@@ -357,17 +440,11 @@ def discover_skill_paths(config: dict) -> list[Path]:
     for include_pattern in include_patterns:
         for matched_path in glob.iglob(include_pattern, recursive=True):
             resolved_skill_path = Path(matched_path).resolve()
-            if resolved_skill_path.name != SKILL_FILE_NAME:
-                continue
-            if not resolved_skill_path.is_file():
-                continue
-            if resolved_skill_path in seen_paths:
-                continue
-            if _is_current_skill(resolved_skill_path):
-                continue
-
-            absolute_path = resolved_skill_path.as_posix()
-            if not _should_scan_path(absolute_path, skill_library):
+            if not _is_scannable_skill_path(
+                resolved_skill_path,
+                skill_library,
+                seen_paths,
+            ):
                 continue
 
             seen_paths.add(resolved_skill_path)
@@ -385,28 +462,9 @@ def materialize_skill_documents(
     metadata_index = metadata_by_id or {}
 
     for skill_path in skill_paths:
-        try:
-            stat_result = skill_path.stat()
-        except OSError:
-            continue
-
-        skill_id = _build_skill_id(skill_path.parent.resolve())
-        metadata = metadata_index.get(skill_id)
-        if _can_reuse_cached_document(stat_result, metadata):
-            documents.append(
-                _build_skill_document_from_metadata(
-                    skill_path,
-                    stat_result=stat_result,
-                    metadata=metadata or {},
-                )
-            )
-            continue
-
-        try:
-            document = build_skill_document(skill_path, stat_result=stat_result)
-        except (OSError, UnicodeError):
-            continue
-        documents.append(document)
+        document = _materialize_one_skill_document(skill_path, metadata_index)
+        if document is not None:
+            documents.append(document)
     return documents
 
 
@@ -426,17 +484,27 @@ def hash_embed(text: str, dimensions: int) -> list[float]:
     return [value / norm for value in vector]
 
 
-def openai_compatible_embed(texts: list[str], embedding_cfg: dict) -> list[list[float]]:
+def _resolve_embedding_api_key(embedding_cfg: dict) -> str:
     api_key = str(embedding_cfg.get("api_key") or "").strip()
-    if not api_key:
-        api_key_env = str(embedding_cfg.get("api_key_env", "OPENAI_API_KEY"))
-        api_key = os.getenv(api_key_env) or ""
-        if not api_key:
-            raise RuntimeError(
-                f"Missing embedding API key. Set embedding.api_key or env var: {api_key_env}"
-            )
+    if api_key:
+        return api_key
 
-    base_url = str(embedding_cfg.get("base_url", "https://api.openai.com/v1")).rstrip(
+    api_key_env = str(embedding_cfg.get("api_key_env", DEFAULT_EMBEDDING_API_KEY_ENV))
+    api_key = os.getenv(api_key_env) or ""
+    if api_key:
+        return api_key
+
+    raise RuntimeError(
+        f"Missing embedding API key. Set embedding.api_key or env var: {api_key_env}"
+    )
+
+
+def _build_embedding_request(
+    texts: list[str],
+    embedding_cfg: dict,
+) -> urllib.request.Request:
+    api_key = _resolve_embedding_api_key(embedding_cfg)
+    base_url = str(embedding_cfg.get("base_url", DEFAULT_EMBEDDING_BASE_URL)).rstrip(
         "/"
     )
     payload = json.dumps({"model": embedding_cfg["model"], "input": texts}).encode(
@@ -447,20 +515,15 @@ def openai_compatible_embed(texts: list[str], embedding_cfg: dict) -> list[list[
         "Authorization": f"Bearer {api_key}",
         **dict(embedding_cfg.get("extra_headers", {})),
     }
-    request = urllib.request.Request(
+    return urllib.request.Request(
         f"{base_url}/embeddings",
         data=payload,
         headers=headers,
         method="POST",
     )
 
-    try:
-        with urllib.request.urlopen(request, timeout=60) as response:
-            parsed = json.loads(response.read().decode("utf-8"))
-    except urllib.error.HTTPError as exc:
-        body = exc.read().decode("utf-8", errors="ignore")
-        raise RuntimeError(f"Embedding API request failed: {exc.code} {body}") from exc
 
+def _parse_embedding_response(parsed: dict) -> list[list[float]]:
     data = parsed.get("data")
     if not isinstance(data, list):
         raise RuntimeError("Embedding API returned invalid payload")
@@ -471,11 +534,23 @@ def openai_compatible_embed(texts: list[str], embedding_cfg: dict) -> list[list[
     ]
 
 
+def openai_compatible_embed(texts: list[str], embedding_cfg: dict) -> list[list[float]]:
+    request = _build_embedding_request(texts, embedding_cfg)
+    try:
+        with urllib.request.urlopen(request, timeout=60) as response:
+            parsed = json.loads(response.read().decode("utf-8"))
+    except urllib.error.HTTPError as exc:
+        body = exc.read().decode("utf-8", errors="ignore")
+        raise RuntimeError(f"Embedding API request failed: {exc.code} {body}") from exc
+
+    return _parse_embedding_response(parsed)
+
+
 def embed_texts(texts: list[str], config: dict) -> list[list[float]]:
     embedding_cfg = config["embedding"]
-    provider = embedding_cfg.get("provider", "hashing")
+    provider = embedding_cfg.get("provider", DEFAULT_EMBEDDING_PROVIDER)
     if provider == "hashing":
-        dimensions = int(embedding_cfg.get("dimensions", 256))
+        dimensions = int(embedding_cfg.get("dimensions", DEFAULT_EMBEDDING_DIMENSIONS))
         return [hash_embed(text, dimensions) for text in texts]
     if provider == "openai-compatible":
         return openai_compatible_embed(texts, embedding_cfg)
@@ -530,6 +605,23 @@ def _needs_reindex(document: SkillDocument, metadata: dict | None) -> bool:
     )
 
 
+def _partition_documents_for_update(
+    documents: list[SkillDocument],
+    existing_by_id: dict[str, dict],
+) -> tuple[list[SkillDocument], int]:
+    to_upsert: list[SkillDocument] = []
+    unchanged_count = 0
+
+    for document in documents:
+        metadata = existing_by_id.get(document.skill_id)
+        if _needs_reindex(document, metadata):
+            to_upsert.append(document)
+        else:
+            unchanged_count += 1
+
+    return to_upsert, unchanged_count
+
+
 def index_update(config: dict) -> dict[str, object]:
     skill_paths = discover_skill_paths(config)
     client = create_client(config["chroma"]["path"])
@@ -543,15 +635,10 @@ def index_update(config: dict) -> dict[str, object]:
     ]
 
     documents = materialize_skill_documents(skill_paths, metadata_by_id=existing_by_id)
-
-    to_upsert: list[SkillDocument] = []
-    unchanged_count = 0
-    for document in documents:
-        metadata = existing_by_id.get(document.skill_id)
-        if _needs_reindex(document, metadata):
-            to_upsert.append(document)
-        else:
-            unchanged_count += 1
+    to_upsert, unchanged_count = _partition_documents_for_update(
+        documents,
+        existing_by_id,
+    )
 
     upsert_documents(collection, to_upsert, config, embed_texts=embed_texts)
     delete_documents(collection, stale_skill_ids)
@@ -565,29 +652,35 @@ def index_update(config: dict) -> dict[str, object]:
     )
 
 
-def recommend_local_skills(
-    rewritten_query: str,
-    config: dict,
-    top_k_override: int | None = None,
-) -> dict[str, object]:
-    if config.get("indexing", {}).get("update_on_start", True):
-        try:
-            index_update(config)
-        except Exception as exc:
-            if is_recoverable_collection_error(exc):
-                raise_collection_rebuild_required(exc)
-            raise
+def _update_index_if_configured(config: dict) -> None:
+    if not config.get("indexing", {}).get("update_on_start", True):
+        return
+    try:
+        index_update(config)
+    except Exception as exc:
+        if is_recoverable_collection_error(exc):
+            raise_collection_rebuild_required(exc)
+        raise
 
-    query_top_k = _require_positive_int(
-        config["retrieval"].get("top_k", 5) if top_k_override is None else top_k_override,
+
+def _resolve_query_top_k(config: dict, top_k_override: int | None) -> int:
+    configured_top_k = config["retrieval"].get("top_k", DEFAULT_TOP_K)
+    return _require_positive_int(
+        configured_top_k if top_k_override is None else top_k_override,
         "top_k",
     )
 
+
+def _query_recommendation_candidates(
+    rewritten_query: str,
+    config: dict,
+    top_k: int,
+) -> list[RecommendCandidate]:
     try:
         results = query_collection(
             rewritten_query,
             config,
-            query_top_k,
+            top_k,
             embed_texts=embed_texts,
         )
     except Exception as exc:
@@ -595,7 +688,21 @@ def recommend_local_skills(
             raise_collection_rebuild_required(exc)
         raise
 
-    candidates = build_candidates(results)
+    return build_candidates(results)
+
+
+def recommend_local_skills(
+    rewritten_query: str,
+    config: dict,
+    top_k_override: int | None = None,
+) -> dict[str, object]:
+    _update_index_if_configured(config)
+    query_top_k = _resolve_query_top_k(config, top_k_override)
+    candidates = _query_recommendation_candidates(
+        rewritten_query,
+        config,
+        query_top_k,
+    )
     return {
         "rewritten_query": rewritten_query,
         "candidates": [candidate.as_dict() for candidate in candidates],
