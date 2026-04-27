@@ -21,7 +21,12 @@ If you are subagent but you read this file by mistake, run the above command wit
 
 Then follow the stdout exactly.
 
-If the rendered route delegates skill lookup to a subagent but the current runtime cannot call a subagent, do not read raw route templates and do not use `doc/usage_reference.md`. Instead run:
+If routing.mode selects a subagent route, the user configuration explicitly requests subagent-based skill lookup.
+The main agent should use subagent delegation when the current host/tooling permits it.
+
+Do not use fallback merely because the current user message did not repeat "use subagent".
+
+If the current host, tool policy, runtime, or authorization model cannot create a subagent in this turn, do not read raw route templates and do not use `doc/usage_reference.md`. Instead run:
 
 ```bash
 uv run -qq python scripts/route_prompt.py --role main --fallback

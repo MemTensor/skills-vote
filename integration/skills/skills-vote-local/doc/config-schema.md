@@ -38,6 +38,7 @@ retrieval_context:
   - `recommend_plus_skill_md`
   - `recommend_plus_skill_dir`
 - this policy only controls recommendation-time evidence; after a skill is selected for actual task execution, the execution agent may read the selected skill's `SKILL.md`
+- when `retrieval.method` is `agentic_grep`, this setting is displayed for awareness but does not restrict search scope; agentic grep always searches `SKILL.md` first, then full skill directories when needed
 
 ## `skill_library`
 
@@ -103,12 +104,27 @@ Notes:
 
 ```yaml
 retrieval:
+  method: vector
   top_k: 5
   final_k: 5
 ```
 
+- `method`: retrieval backend
+  - `vector`: use `scripts/recommend.py` and the local vector index
+  - `agentic_grep`: sync include-matched skills into `./.skills/` as directory symlinks and search them with `find`/`grep`
 - `top_k`: default Chroma recall size, can be overridden per query with `scripts/recommend.py --top-k N`
 - `final_k`: reserved for future use; keep it in config, but it is not used by the current implementation
+
+When `method` is `agentic_grep`:
+
+- `scripts/route_prompt.py` syncs `project_root/.skills/` before rendering the route
+- `project_root` is computed from the script location, not the shell cwd or config
+- `.skills/` is an agent-facing namespace, not the real skill source
+- sync creates and unlinks only managed directory symlinks under `.skills/`
+- sync does not write a manifest, sentinel file, `.gitignore`, or copied skill files
+- `.skills/**` is excluded from discovery to avoid recursive namespace pollution
+- prompts use symlink-aware `find -H ./.skills/* ... -exec grep ...`
+- prompts do not use `scripts/recommend.py` or vector retrieval in this mode
 
 ## `indexing`
 

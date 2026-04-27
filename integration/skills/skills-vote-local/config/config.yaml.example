@@ -30,6 +30,7 @@ embedding:
   extra_headers: {}
 
 retrieval:
+  method: agentic_grep
   top_k: 5
   final_k: 5
 
