@@ -24,6 +24,10 @@ from chroma_utils import (
     reset_collection,
     upsert_documents,
 )
+from config_validation import (
+    contains_placeholder_path,
+    require_supported_config_fields,
+)
 
 TOKEN_RE = re.compile(r"[a-zA-Z0-9_./+-]+")
 RETRIEVAL_TEXT_VERSION = "title-description-v1"
@@ -39,9 +43,18 @@ DEFAULT_TOP_K = 5
 DEFAULT_INCLUDE_PATTERNS = ("**/SKILL.md",)
 DEFAULT_EXCLUDE_PATTERNS = (
     "**/.git/**",
+    "**/.hg/**",
+    "**/.svn/**",
+    "**/.skills/**",
     "**/.venv/**",
+    "**/venv/**",
     "**/node_modules/**",
     "**/__pycache__/**",
+    "**/.pytest_cache/**",
+    "**/.mypy_cache/**",
+    "**/.ruff_cache/**",
+    "**/dist/**",
+    "**/build/**",
 )
 CURRENT_SKILL_ROOT = Path(__file__).resolve().parent.parent
 
@@ -103,6 +116,7 @@ class RecommendCandidate:
 def load_config(config_path: str | Path) -> dict:
     config_path = Path(config_path).resolve()
     config = _read_config_yaml(config_path)
+    require_supported_config_fields(config)
     _apply_config_defaults(config)
     _normalize_config(config, config_path.parent)
     _validate_config(config)
@@ -123,11 +137,8 @@ def _apply_config_defaults(config: dict) -> None:
     retrieval = config.setdefault("retrieval", {})
     config.setdefault("indexing", {})
 
-    skill_library.setdefault("roots", [])
     skill_library.setdefault("include", list(DEFAULT_INCLUDE_PATTERNS))
     skill_library.setdefault("exclude", list(DEFAULT_EXCLUDE_PATTERNS))
-    skill_library.setdefault("extend_include", [])
-    skill_library.setdefault("extend_exclude", [])
 
     chroma.setdefault("path", DEFAULT_CHROMA_PATH)
     chroma.setdefault("collection", DEFAULT_COLLECTION_NAME)
@@ -141,7 +152,6 @@ def _apply_config_defaults(config: dict) -> None:
     embedding.setdefault("extra_headers", {})
 
     retrieval.setdefault("top_k", DEFAULT_TOP_K)
-    retrieval.setdefault("final_k", DEFAULT_TOP_K)
 
 
 def _normalize_config(config: dict, base_dir: Path) -> None:
@@ -149,10 +159,7 @@ def _normalize_config(config: dict, base_dir: Path) -> None:
     chroma = config["chroma"]
     indexing = config["indexing"]
 
-    auto_update = indexing.get("update_on_start")
-    if auto_update is None:
-        auto_update = indexing.get("rebuild_on_start", True)
-    indexing["update_on_start"] = bool(auto_update)
+    indexing["update_on_start"] = bool(indexing.get("update_on_start", True))
 
     skill_library["_scan_include_patterns"] = _build_scan_include_patterns(
         base_dir,
@@ -179,7 +186,7 @@ def _validate_config(config: dict) -> None:
         raise ValueError(
             "skill_library.include must contain at least one real glob pattern"
         )
-    if any("/absolute/path/to/" in pattern for pattern in include_patterns):
+    if any(contains_placeholder_path(pattern) for pattern in include_patterns):
         raise ValueError(
             "Replace placeholder paths in skill_library.include with real skill globs"
         )
@@ -261,10 +268,6 @@ def _collect_patterns(values: list[str] | tuple[str, ...] | None) -> list[str]:
     return [str(value).strip() for value in values if str(value).strip()]
 
 
-def _is_absolute_pattern(raw_pattern: str) -> bool:
-    return Path(os.path.expanduser(raw_pattern)).is_absolute()
-
-
 def _normalize_scan_pattern(base_dir: Path, raw_pattern: str) -> str:
     expanded = os.path.expanduser(str(raw_pattern).strip())
     if Path(expanded).is_absolute():
@@ -274,35 +277,21 @@ def _normalize_scan_pattern(base_dir: Path, raw_pattern: str) -> str:
 
 def _build_scan_include_patterns(base_dir: Path, skill_library: dict) -> list[str]:
     include_patterns = _collect_patterns(skill_library.get("include"))
-    extend_include_patterns = _collect_patterns(skill_library.get("extend_include"))
-    legacy_roots = [
-        _resolve(base_dir, root)
-        for root in _collect_patterns(skill_library.get("roots"))
-    ]
+    return [_normalize_scan_pattern(base_dir, pattern) for pattern in include_patterns]
 
-    def resolve_patterns(patterns: list[str]) -> list[str]:
-        if not legacy_roots:
-            return [_normalize_scan_pattern(base_dir, pattern) for pattern in patterns]
 
-        resolved_patterns: list[str] = []
-        for pattern in patterns:
-            if _is_absolute_pattern(pattern):
-                resolved_patterns.append(_normalize_scan_pattern(base_dir, pattern))
-                continue
-            for root in legacy_roots:
-                resolved_patterns.append(os.path.normpath(str(root / pattern)))
-        return resolved_patterns
-
-    return resolve_patterns(include_patterns) + resolve_patterns(
-        extend_include_patterns
+def _should_scan_path(
+    raw_skill_path: Path,
+    canonical_skill_path: Path,
+    skill_library: dict,
+) -> bool:
+    excludes = list(skill_library.get("exclude", []))
+    if not excludes:
+        return True
+    return not (
+        _matches_any(raw_skill_path.absolute().as_posix(), excludes)
+        or _matches_any(canonical_skill_path.as_posix(), excludes)
     )
-
-
-def _should_scan_path(skill_path: Path, skill_library: dict) -> bool:
-    excludes = list(skill_library.get("exclude", [])) + list(
-        skill_library.get("extend_exclude", [])
-    )
-    return not (excludes and _matches_any(skill_path.as_posix(), excludes))
 
 
 def _is_current_skill(skill_path: Path) -> bool:
@@ -314,19 +303,20 @@ def _build_skill_id(skill_root: Path) -> str:
 
 
 def _is_scannable_skill_path(
-    skill_path: Path,
+    raw_skill_path: Path,
+    canonical_skill_path: Path,
     skill_library: dict,
     seen_paths: set[Path],
 ) -> bool:
-    if skill_path.name != SKILL_FILE_NAME:
+    if raw_skill_path.name != SKILL_FILE_NAME:
         return False
-    if not skill_path.is_file():
+    if not canonical_skill_path.is_file():
         return False
-    if skill_path in seen_paths:
+    if canonical_skill_path in seen_paths:
         return False
-    if _is_current_skill(skill_path):
+    if _is_current_skill(canonical_skill_path):
         return False
-    return _should_scan_path(skill_path, skill_library)
+    return _should_scan_path(raw_skill_path, canonical_skill_path, skill_library)
 
 
 def _build_skill_document_from_bytes(
@@ -439,8 +429,10 @@ def discover_skill_paths(config: dict) -> list[Path]:
 
     for include_pattern in include_patterns:
         for matched_path in glob.iglob(include_pattern, recursive=True):
-            resolved_skill_path = Path(matched_path).resolve()
+            raw_skill_path = Path(matched_path)
+            resolved_skill_path = raw_skill_path.resolve()
             if not _is_scannable_skill_path(
+                raw_skill_path,
                 resolved_skill_path,
                 skill_library,
                 seen_paths,

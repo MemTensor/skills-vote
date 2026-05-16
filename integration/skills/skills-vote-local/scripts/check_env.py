@@ -9,6 +9,10 @@ from pathlib import Path
 
 import yaml
 from cli_common import add_config_argument, resolve_config_path
+from config_validation import (
+    find_unsupported_config_fields,
+    resolve_retrieval_method,
+)
 from sync_skills import SKILLS_ROOT, sync_skill_namespace
 
 
@@ -84,18 +88,27 @@ def read_config_yaml(
         result["message"] = "Config root must be a YAML object."
         return None, result
 
+    unsupported_fields = find_unsupported_config_fields(loaded)
+    if unsupported_fields:
+        result["ok"] = False
+        result["message"] = "Unsupported config field(s): " + ", ".join(
+            unsupported_fields
+        )
+        return None, result
+
     result["ok"] = True
     result["message"] = "Config file exists and parses successfully."
     return loaded, result
 
 
-def get_retrieval_method(config: dict[str, object] | None) -> str:
+def get_retrieval_method(config: dict[str, object] | None) -> tuple[str, list[str]]:
     if not config:
-        return "vector"
+        return "agentic_grep", []
     retrieval = config.get("retrieval")
     if not isinstance(retrieval, dict):
-        return "vector"
-    return str(retrieval.get("method") or "vector")
+        return "agentic_grep", []
+    method, warning = resolve_retrieval_method(retrieval.get("method"))
+    return method, [warning] if warning is not None else []
 
 
 def check_tool(name: str) -> dict[str, object]:
@@ -122,7 +135,7 @@ def main() -> None:
 
     uv_result = check_uv()
     raw_config, raw_config_result = read_config_yaml(config_path)
-    retrieval_method = get_retrieval_method(raw_config)
+    retrieval_method, warnings = get_retrieval_method(raw_config)
 
     if retrieval_method == "agentic_grep":
         find_result = check_tool("find")
@@ -155,6 +168,7 @@ def main() -> None:
                         "grep": grep_result,
                     },
                     "skills_sync": sync_result_json,
+                    "warnings": warnings,
                 },
                 ensure_ascii=False,
                 indent=2,
@@ -173,6 +187,7 @@ def main() -> None:
                 "retrieval_method": retrieval_method,
                 "uv": uv_result,
                 "config": config_result,
+                "warnings": warnings,
             },
             ensure_ascii=False,
             indent=2,

@@ -3,13 +3,16 @@ from __future__ import annotations
 import fnmatch
 import glob
 import hashlib
-import os
 import re
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
 import yaml
+from config_validation import (
+    contains_placeholder_path,
+    require_supported_skill_library_fields,
+)
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 SKILLS_ROOT = PROJECT_ROOT / ".skills"
@@ -40,51 +43,18 @@ def _collect_patterns(values: object) -> list[str]:
     return [str(value).strip() for value in values if str(value).strip()]
 
 
-def _resolve(base_dir: Path, raw_path: str) -> Path:
-    expanded = os.path.expanduser(str(raw_path).strip())
-    path = Path(expanded)
-    if path.is_absolute():
-        return path.resolve()
-    return (base_dir / path).resolve()
-
-
-def _is_absolute_pattern(raw_pattern: str) -> bool:
-    return Path(os.path.expanduser(raw_pattern)).is_absolute()
-
-
 def _normalize_scan_pattern(base_dir: Path, raw_pattern: str) -> str:
-    expanded = os.path.expanduser(str(raw_pattern).strip())
-    if Path(expanded).is_absolute():
-        return os.path.normpath(expanded)
-    return os.path.normpath(str(base_dir / expanded))
+    path = Path(str(raw_pattern).strip()).expanduser()
+    if path.is_absolute():
+        return str(path)
+    return str(base_dir / path)
 
 
 def _build_scan_include_patterns(
     base_dir: Path, skill_library: dict[str, Any]
 ) -> list[str]:
     include_patterns = _collect_patterns(skill_library.get("include"))
-    extend_include_patterns = _collect_patterns(skill_library.get("extend_include"))
-    legacy_roots = [
-        _resolve(base_dir, root)
-        for root in _collect_patterns(skill_library.get("roots"))
-    ]
-
-    def resolve_patterns(patterns: list[str]) -> list[str]:
-        if not legacy_roots:
-            return [_normalize_scan_pattern(base_dir, pattern) for pattern in patterns]
-
-        resolved_patterns: list[str] = []
-        for pattern in patterns:
-            if _is_absolute_pattern(pattern):
-                resolved_patterns.append(_normalize_scan_pattern(base_dir, pattern))
-                continue
-            for root in legacy_roots:
-                resolved_patterns.append(os.path.normpath(str(root / pattern)))
-        return resolved_patterns
-
-    return resolve_patterns(include_patterns) + resolve_patterns(
-        extend_include_patterns
-    )
+    return [_normalize_scan_pattern(base_dir, pattern) for pattern in include_patterns]
 
 
 def _matches_any(path_text: str, patterns: list[str]) -> bool:
@@ -110,9 +80,7 @@ def _should_scan_path(
         return False
     if _is_under(canonical_skill_path, SKILLS_ROOT):
         return False
-    excludes = _collect_patterns(skill_library.get("exclude")) + _collect_patterns(
-        skill_library.get("extend_exclude")
-    )
+    excludes = _collect_patterns(skill_library.get("exclude"))
     if not excludes:
         return True
     return not (
@@ -127,12 +95,13 @@ def discover_skill_aliases(
     skill_library = config.get("skill_library")
     if not isinstance(skill_library, dict):
         raise ValueError("skill_library must be a YAML object")
+    require_supported_skill_library_fields(skill_library)
 
     include_patterns = _build_scan_include_patterns(config_path.parent, skill_library)
     include_patterns = [pattern for pattern in include_patterns if pattern.strip()]
     if not include_patterns:
         raise ValueError("skill_library.include must contain at least one glob pattern")
-    if any("/path/to/your-skill-library/" in pattern for pattern in include_patterns):
+    if any(contains_placeholder_path(pattern) for pattern in include_patterns):
         raise ValueError("Replace placeholder paths in skill_library.include")
 
     aliases_by_root: dict[Path, SkillAlias] = {}

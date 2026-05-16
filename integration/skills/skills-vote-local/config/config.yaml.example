@@ -1,38 +1,60 @@
+# Production starter config for skills-vote-local.
+# Copy this file to config/config.yaml, then replace skill_library.include.
+
 routing:
+  # main_single_pass | main_multi_pass | subagent_single_pass | subagent_multi_pass
   mode: subagent_multi_pass
+  # Used only by multi-pass routes. Single-pass routes always use one pass.
   max_passes: 3
 
+retrieval:
+  # agentic_grep is the production default: no embedding service or vector index required.
+  # Use vector only when you intentionally want recommend.py + Chroma retrieval.
+  method: agentic_grep
+
 retrieval_context:
+  # In agentic_grep mode this is informational; search scope is always ./.skills/.
+  # In vector mode it controls recommendation-time candidate inspection.
   mode: recommend_plus_skill_md
 
 skill_library:
+  # Replace with one or more real skill-library globs.
   include:
     - /path/to/your-skill-library/**/SKILL.md
   exclude:
     - "**/.git/**"
+    - "**/.hg/**"
+    - "**/.svn/**"
+    - "**/.skills/**"
     - "**/.venv/**"
+    - "**/venv/**"
     - "**/node_modules/**"
     - "**/__pycache__/**"
-  extend_include: []
-  extend_exclude: []
+    - "**/.pytest_cache/**"
+    - "**/.mypy_cache/**"
+    - "**/.ruff_cache/**"
+    - "**/dist/**"
+    - "**/build/**"
 
-chroma:
-  path: ../output/chroma/skills_vote_local
-  collection: skills_vote_local
-
-embedding:
-  provider: openai-compatible
-  model: bge-m3
-  dimensions: 1024
-  api_key_env: OPENAI_API_KEY
-  api_key: ""
-  base_url: https://api.openai.com/v1
-  extra_headers: {}
-
-retrieval:
-  method: agentic_grep
-  top_k: 5
-  final_k: 5
-
-indexing:
-  update_on_start: true
+# Optional vector retrieval settings.
+# These are used only when retrieval.method is vector.
+#
+# chroma:
+#  path: ../output/chroma/skills_vote_local
+#  collection: skills_vote_local
+#
+# embedding:
+#  provider: openai-compatible
+#  model: bge-m3
+#  dimensions: 1024
+#  api_key_env: OPENAI_API_KEY
+#  api_key: ""
+#  base_url: https://api.openai.com/v1
+#  extra_headers: {}
+#
+# retrieval:
+#  method: vector
+#  top_k: 5
+#
+# indexing:
+#  update_on_start: true

@@ -281,7 +281,3 @@ $RECYCLE.BIN/
 **/.skills_vote/
 
 !**/.gitkeep
-.omx/
-.codex/
-runtime_test/
-AGENTS.md

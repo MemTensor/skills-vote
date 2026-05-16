@@ -10,6 +10,11 @@ from typing import Any
 import prompt
 import yaml
 from cli_common import resolve_config_path
+from config_validation import (
+    DEFAULT_RETRIEVAL_METHOD,
+    find_unsupported_config_fields,
+    resolve_retrieval_method,
+)
 from sync_skills import PROJECT_ROOT, SKILLS_ROOT, SyncResult, sync_skill_namespace
 
 SKILL_ROOT = PROJECT_ROOT
@@ -17,7 +22,6 @@ HANDOFF_PATH = SKILL_ROOT / "doc" / "handoff.md"
 DEFAULT_MODE = "subagent_multi_pass"
 DEFAULT_MAX_PASSES = 3
 DEFAULT_CONTEXT = "recommend_plus_skill_md"
-DEFAULT_RETRIEVAL_METHOD = "vector"
 PLACEHOLDER_RE = re.compile(r"{[a-zA-Z_][a-zA-Z0-9_]*}")
 ALLOWED_MODES = {
     "main_single_pass",
@@ -29,10 +33,6 @@ ALLOWED_CONTEXTS = {
     "recommend_only",
     "recommend_plus_skill_md",
     "recommend_plus_skill_dir",
-}
-ALLOWED_RETRIEVAL_METHODS = {
-    "vector",
-    "agentic_grep",
 }
 
 
@@ -46,6 +46,7 @@ class RouterConfig:
     retrieval_method: str
     config_path: Path
     config_loaded: bool
+    config_errors: list[str]
     sync_result: SyncResult | None
     warnings: list[str]
 
@@ -88,6 +89,15 @@ def _read_config(config_path: Path, warnings: list[str]) -> tuple[dict[str, Any]
         )
         return {}, False
 
+    unsupported_fields = find_unsupported_config_fields(loaded)
+    if unsupported_fields:
+        warnings.append(
+            "Unsupported config field(s): "
+            + ", ".join(unsupported_fields)
+            + ". Remove or rename unsupported fields in config/config.yaml."
+        )
+        return loaded, True
+
     return loaded, True
 
 
@@ -103,8 +113,7 @@ def _resolve_mode(routing: dict[str, Any], warnings: list[str]) -> tuple[str, st
 
     warnings.append(
         f'Unsupported routing.mode "{configured_mode}". '
-        f'Falling back to "{DEFAULT_MODE}". '
-        'Note: "delegate_to_subagent" is deprecated and is not an alias.'
+        f'Falling back to "{DEFAULT_MODE}".'
     )
     return configured_mode, DEFAULT_MODE
 
@@ -144,15 +153,12 @@ def _resolve_context(context: dict[str, Any], warnings: list[str]) -> str:
 
 
 def _resolve_retrieval_method(retrieval: dict[str, Any], warnings: list[str]) -> str:
-    configured_method = str(retrieval.get("method", DEFAULT_RETRIEVAL_METHOD))
-    if configured_method in ALLOWED_RETRIEVAL_METHODS:
-        return configured_method
-
-    warnings.append(
-        f'Unsupported retrieval.method "{configured_method}". '
-        f'Falling back to "{DEFAULT_RETRIEVAL_METHOD}".'
+    configured_method, warning = resolve_retrieval_method(
+        retrieval.get("method", DEFAULT_RETRIEVAL_METHOD)
     )
-    return DEFAULT_RETRIEVAL_METHOD
+    if warning is not None:
+        warnings.append(warning)
+    return configured_method
 
 
 def _main_equivalent_mode(mode: str) -> str:
@@ -167,6 +173,9 @@ def load_router_config(role: str, *, fallback: bool = False) -> RouterConfig:
     config_path = resolve_config_path(None)
     warnings: list[str] = []
     config, config_loaded = _read_config(config_path, warnings)
+    config_errors = (
+        find_unsupported_config_fields(config) if config_loaded and config else []
+    )
     routing = _section(config, "routing")
     context = _section(config, "retrieval_context")
     retrieval = _section(config, "retrieval")
@@ -191,7 +200,7 @@ def load_router_config(role: str, *, fallback: bool = False) -> RouterConfig:
         )
 
     sync_result = None
-    if config_loaded and retrieval_method == "agentic_grep":
+    if config_loaded and not config_errors and retrieval_method == "agentic_grep":
         sync_result = sync_skill_namespace(config, config_path)
         warnings.extend(sync_result.warnings)
         warnings.extend(sync_result.errors)
@@ -205,6 +214,7 @@ def load_router_config(role: str, *, fallback: bool = False) -> RouterConfig:
         retrieval_method=retrieval_method,
         config_path=config_path,
         config_loaded=config_loaded,
+        config_errors=config_errors,
         sync_result=sync_result,
         warnings=warnings,
     )
@@ -224,6 +234,8 @@ def _render_header(role: str, config: RouterConfig, *, fallback: bool) -> str:
 
     if not config.config_loaded:
         lines.append("config: missing")
+    elif config.config_errors:
+        lines.append("config: invalid")
 
     if config.sync_result is not None:
         sync_state = "ok" if config.sync_result.ok else "failed"
@@ -405,6 +417,10 @@ def render_route_prompt(
     body_parts = []
     if not config.config_loaded:
         body_parts.append(prompt.render_missing_config_prompt())
+    elif config.config_errors:
+        body_parts.append(
+            prompt.render_invalid_config_prompt(config_errors=config.config_errors)
+        )
     elif config.retrieval_method == "agentic_grep" and (
         config.sync_result is None or not config.sync_result.ok
     ):

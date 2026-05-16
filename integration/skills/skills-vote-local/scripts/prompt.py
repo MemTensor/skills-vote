@@ -30,6 +30,28 @@ If you are a subagent, return no selected skills and explain that retrieval is u
 Example response shape: `{"skills": [], "reason": "Default config/config.yaml was not found, so local skill retrieval is not configured yet."}`."""
 
 
+def render_invalid_config_prompt(*, config_errors: list[str]) -> str:
+    joined_errors = "\n".join(f"- {error}" for error in config_errors)
+    return f"""## Invalid config
+
+config/config.yaml contains unsupported fields:
+
+{joined_errors}
+
+Do not run recommend.py.
+Do not run agentic grep.
+Do not guess how unsupported fields should behave.
+
+Update config/config.yaml to use only the supported schema from config/config.yaml.example, then rerun:
+
+```bash
+uv run -qq python scripts/route_prompt.py --role main
+```
+
+If you are a subagent, return no selected skills and explain that local skill retrieval is unavailable because config/config.yaml contains unsupported fields.
+Example response shape: `{{"skills": [], "reason": "config/config.yaml contains unsupported fields, so local skill retrieval is unavailable until the config is updated."}}`."""
+
+
 def render_fallback_preamble() -> str:
     return """## Fallback mode
 
