@@ -67,7 +67,14 @@ For a detailed breakdown of the quality and verifiability criteria used in our e
 
 ## 🚀 Quick Start
 
-### Option 1: Install the Hosted Skill (Recommended)
+### Two Skill Versions
+
+SkillsVote currently ships two agent-facing skills:
+
+- **`skills-vote`**: recommends skills from the hosted SkillsVote service. Use this when the agent can call the cloud recommendation API and you want fresh recommendations from the public SkillsVote ecosystem.
+- **`skills-vote-local`**: recommends skills from local or private skill libraries. Use this when the agent should search skills already present on the machine, in the current workspace, or in private directories that should not be sent to the hosted service.
+
+### Option 1: Install the Hosted Skill `skills-vote` (Cloud)
 
 #### 🤖 Agent Setup Prompt
 
@@ -103,7 +110,25 @@ npx skills add MemTensor/skills-vote --skill skills-vote
 > [!note]
 > Don't forget to replace `YOUR_API_KEY` with your actual key!
 
-### Option 2: Run the Local Demo 🏠
+### Option 2: Install the Local Skill `skills-vote-local` (Private Libraries)
+
+Use this when you want the agent to recommend from local skills instead of the hosted SkillsVote service.
+
+#### 🤖 Agent Setup Prompt
+
+```markdown
+Fetch and follow installation instructions from https://raw.githubusercontent.com/MemTensor/skills-vote/main/docs/INSTALL_LOCAL.md
+```
+
+#### 🔧 Manual Setup Alternative
+
+```bash
+npx skills add MemTensor/skills-vote --skill skills-vote-local
+```
+
+After installation, open the installed skill root and configure `config/config.yaml`. See [Install SkillsVote Local](docs/INSTALL_LOCAL.md) for the full configuration flow.
+
+### Option 3: Run the Local Demo 🏠
 
 Want to test drive the core engine locally? Just follow these 3 easy steps:
 

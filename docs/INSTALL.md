@@ -2,11 +2,13 @@
 
 Use this guide when asked to install the `skills-vote` skill for the current agent.
 
+This guide installs the hosted `skills-vote` skill. For local or private skill libraries, use [`INSTALL_LOCAL.md`](INSTALL_LOCAL.md) to install `skills-vote-local`.
+
 ## Goal
 
-Install `skills-vote` into the current agent's **global** skill directory by default. If the current request explicitly asks for workspace or current-project installation, use that scope instead. Then write `SKILLS_VOTE_API_KEY` and optionally a usable GH_TOKEN or GITHUB_TOKEN only into the installed skill root.
+Install `skills-vote` into the current agent's **global** skill directory by default. If the current request explicitly asks for workspace or current-project installation, use that scope instead. Then write `SKILLS_VOTE_API_KEY` and, when available, one usable GitHub token into the installed skill root.
 
-This guide assumes the current request provides these runtime inputs:
+This guide assumes the current request or conversation provides these runtime inputs:
 - the current agent
 - the API key value to write into `.env`
 - optionally, a usable GitHub token if one is already available or explicitly provided
@@ -17,7 +19,7 @@ Support both installation scopes:
 - **Global**: default choice
 - **Workspace / current project**: use only when the current request explicitly asks for it
 
-If the intended scope is unclear, stop and ask instead of guessing.
+Do not ask about scope unless the user gives conflicting or ambiguous scope instructions.
 
 ## Common `<current-agent>` values
 
@@ -38,7 +40,7 @@ Use the value in the right column for `-a <current-agent>`. These are `npx skill
 | OpenHands | `openhands` |
 | Pi | `pi` |
 
-If the current agent is not listed here, use the exact agent value accepted by `npx skills add -a ...`. If you are unsure, check `npx skills add --help` instead of guessing.
+If the current agent is not listed here, do not infer a new identifier from the product name. Ask the user for the correct `npx skills` agent identifier, or use a verified value supplied by the current runtime.
 
 ## Required flow
 
@@ -74,7 +76,7 @@ If the current agent is not listed here, use the exact agent value accepted by `
 5. Create or update `<path>/.env` and set `SKILLS_VOTE_API_KEY` to the API key value provided in the current request or prompt. Do not write the literal string `YOUR_API_KEY`.
 6. GitHub token handling is optional:
    - If a usable `GH_TOKEN` or `GITHUB_TOKEN` is already available or explicitly provided, you may write one of them into `<path>/.env`.
-   - If the GitHub token is empty, missing, or unable to use, warn your owner that downloading skills may hit a GitHub rate limit and ask for a usable token.
+   - If the GitHub token is empty, missing, or not usable, tell the user that downloading skills may hit a GitHub rate limit and ask whether they want to provide a usable token.
    - If no usable GitHub token is ultimately provided, do **not** set `GH_TOKEN` or `GITHUB_TOKEN` in the `.env` file.
 
 ```env
@@ -87,4 +89,4 @@ GITHUB_TOKEN="<usable-github-token>"
 - Do **not** install into the current project or workspace unless explicitly requested.
 - Do **not** configure `SKILLS_VOTE_API_KEY` as a system-level or user-level environment variable unless explicitly requested.
 - Do **not** hardcode the install path. Always use the path returned by `npx skills list ... --json`.
-- If the current request does not provide a usable API key value, stop and ask your owner to provide one or obtain one from `https://skills.vote`. Do not invent an API key.
+- If the current request does not provide a usable API key value, stop and ask the user to provide one or obtain one from `https://skills.vote`. Do not invent an API key.
