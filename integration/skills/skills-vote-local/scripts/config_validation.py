@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 
-DEFAULT_RETRIEVAL_METHOD = "agentic_grep"
-ALLOWED_RETRIEVAL_METHODS = {"agentic_grep", "vector"}
+DEFAULT_RETRIEVAL_METHOD = "agentic_search"
+ALLOWED_RETRIEVAL_METHODS = {"agentic_search", "vector_search"}
 PLACEHOLDER_PATH_MARKERS = (
     "/path/to/your-skill-library/",
     "/absolute/path/to/",

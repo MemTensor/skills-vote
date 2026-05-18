@@ -2,7 +2,7 @@
 
 `skills-vote-local` reads `config/config.yaml` by default.
 
-Production recommendation: start with `retrieval.method: agentic_grep`.
+Production recommendation: start with `retrieval.method: agentic_search`.
 It needs only a skill-library glob and does not require Chroma, an embedding
 provider, or an API key.
 
@@ -18,7 +18,7 @@ routing:
   max_passes: 3
 
 retrieval:
-  method: agentic_grep
+  method: agentic_search
 
 retrieval_context:
   mode: recommend_plus_skill_md
@@ -65,16 +65,16 @@ routing:
 
 ```yaml
 retrieval:
-  method: agentic_grep
+  method: agentic_search
 ```
 
 - `method`: retrieval backend.
-  - `agentic_grep`: sync include-matched skills into `./.skills/` as directory symlinks and search them with bounded `find`/`grep`.
-  - `vector`: use `scripts/recommend.py`, Chroma, and the configured embedding provider.
-- production default: `agentic_grep`.
+  - `agentic_search`: sync include-matched skills into `./.skills/` as directory symlinks and search them with bounded `find`/`grep`.
+  - `vector_search`: use `scripts/recommend.py`, Chroma, and the configured embedding provider.
+- production default: `agentic_search`.
 - set this field explicitly in committed configs so the intended retrieval backend is visible at a glance.
 
-When `method` is `agentic_grep`:
+When `method` is `agentic_search`:
 
 - `scripts/route_prompt.py` syncs `project_root/.skills/` before rendering the route.
 - `project_root` is computed from the script location, not the shell cwd or config.
@@ -83,18 +83,18 @@ When `method` is `agentic_grep`:
 - sync does not write a manifest, sentinel file, `.gitignore`, or copied skill files.
 - `.skills/**` is excluded from discovery to avoid recursive namespace pollution.
 - prompts use `find -H ./.skills/* ... -exec grep ...` so only top-level alias symlinks are followed.
-- prompts do not use `scripts/recommend.py`, vector retrieval, or embedding retrieval.
+- prompts do not use `scripts/recommend.py`, vector_search, or embedding retrieval.
 
-Vector-only retrieval options:
+`vector_search` retrieval options:
 
 ```yaml
 retrieval:
-  method: vector
+  method: vector_search
   top_k: 5
 ```
 
 - `top_k`: default Chroma recall size; can be overridden per query with `scripts/recommend.py --top-k N`.
-- omit `top_k` when using `agentic_grep`.
+- omit `top_k` when using `agentic_search`.
 
 ## `retrieval_context`
 
@@ -110,7 +110,7 @@ retrieval_context:
   - `recommend_plus_skill_md`
   - `recommend_plus_skill_dir`
 - this policy only controls recommendation-time evidence; after a skill is selected for actual task execution, the execution agent may read the selected skill's `SKILL.md`.
-- in `agentic_grep` mode this setting is shown for awareness but does not restrict corpus scope; the corpus remains `./.skills/`, with `SKILL.md` searched first and full skill directories searched only when needed.
+- in `agentic_search` mode this setting is shown for awareness but does not restrict corpus scope; the corpus remains `./.skills/`, with `SKILL.md` searched first and full skill directories searched only when needed.
 
 ## `skill_library`
 
@@ -140,9 +140,9 @@ skill_library:
   - `../skills/**/SKILL.md`
   - `../../.codex/skills/**/SKILL.md`
 - `exclude`: glob filters applied to matched absolute paths and canonical paths.
-- include `.skills/**` in `exclude` for vector mode; agentic sync also excludes `.skills/**` internally.
+- include `.skills/**` in `exclude` for vector_search mode; agentic sync also excludes `.skills/**` internally.
 
-## Vector-only `chroma`
+## `vector_search` `chroma`
 
 ```yaml
 chroma:
@@ -150,13 +150,13 @@ chroma:
   collection: skills_vote_local
 ```
 
-- used only when `retrieval.method` is `vector`.
+- used only when `retrieval.method` is `vector_search`.
 - `path`: where the local Chroma data directory will be created.
 - relative paths are resolved from the config file directory.
 - choose a writable location owned by the current runtime.
 - `collection`: Chroma collection name.
 
-## Vector-only `embedding`
+## `vector_search` `embedding`
 
 ```yaml
 embedding:
@@ -176,7 +176,7 @@ Supported providers:
 
 Notes:
 
-- production vector retrieval should use `openai-compatible`, `bge-m3`, and `1024` dimensions unless the embedding service requires different values.
+- production vector_search should use `openai-compatible`, `bge-m3`, and `1024` dimensions unless the embedding service requires different values.
 - `api_key` takes precedence when both `api_key` and `api_key_env` are present.
 - keep `api_key: ""` in committed configs; prefer `api_key_env` for real credentials.
 - `model` defaults to `bge-m3`; the local `hashing` provider ignores it.
@@ -184,13 +184,13 @@ Notes:
 - `base_url` should point to an OpenAI-compatible embeddings endpoint and should not be blank for `openai-compatible`.
 - `extra_headers` is for provider-specific HTTP headers; keep `{}` unless required.
 
-## Vector-only `indexing`
+## `vector_search` `indexing`
 
 ```yaml
 indexing:
   update_on_start: true
 ```
 
-- used only when `retrieval.method` is `vector`.
+- used only when `retrieval.method` is `vector_search`.
 - `update_on_start=true`: run incremental `update` automatically before each query.
 - `false`: query the existing collection as-is.

@@ -1,4 +1,8 @@
 #!/usr/bin/env python3
+# /// script
+# dependencies = ["PyYAML>=6.0.3,<7.0.0", "chromadb>=1.3.5,<2.0.0"]
+# ///
+
 from __future__ import annotations
 
 import argparse

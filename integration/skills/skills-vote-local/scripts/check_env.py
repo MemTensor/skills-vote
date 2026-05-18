@@ -1,4 +1,8 @@
 #!/usr/bin/env python3
+# /// script
+# dependencies = ["PyYAML>=6.0.3,<7.0.0"]
+# ///
+
 from __future__ import annotations
 
 import argparse
@@ -103,10 +107,10 @@ def read_config_yaml(
 
 def get_retrieval_method(config: dict[str, object] | None) -> tuple[str, list[str]]:
     if not config:
-        return "agentic_grep", []
+        return "agentic_search", []
     retrieval = config.get("retrieval")
     if not isinstance(retrieval, dict):
-        return "agentic_grep", []
+        return "agentic_search", []
     method, warning = resolve_retrieval_method(retrieval.get("method"))
     return method, [warning] if warning is not None else []
 
@@ -137,7 +141,7 @@ def main() -> None:
     raw_config, raw_config_result = read_config_yaml(config_path)
     retrieval_method, warnings = get_retrieval_method(raw_config)
 
-    if retrieval_method == "agentic_grep":
+    if retrieval_method == "agentic_search":
         find_result = check_tool("find")
         grep_result = check_tool("grep")
         if raw_config is None:

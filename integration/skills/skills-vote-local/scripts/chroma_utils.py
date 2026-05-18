@@ -125,5 +125,5 @@ def is_recoverable_collection_error(exc: Exception) -> bool:
 
 def raise_collection_rebuild_required(exc: Exception) -> None:
     raise RuntimeError(
-        "Collection state is unhealthy. Run `uv run python scripts/index.py` to rebuild, then retry the query."
+        "Collection state is unhealthy. Run `uv run scripts/index.py` to rebuild, then retry the query."
     ) from exc

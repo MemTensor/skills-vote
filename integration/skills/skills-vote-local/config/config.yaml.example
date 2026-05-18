@@ -8,13 +8,13 @@ routing:
   max_passes: 3
 
 retrieval:
-  # agentic_grep is the production default: no embedding service or vector index required.
-  # Use vector only when you intentionally want recommend.py + Chroma retrieval.
-  method: agentic_grep
+  # agentic_search is the production default: no embedding service or vector_search index is required.
+  # Use vector_search only when you intentionally want recommend.py + Chroma retrieval.
+  method: agentic_search
 
 retrieval_context:
-  # In agentic_grep mode this is informational; search scope is always ./.skills/.
-  # In vector mode it controls recommendation-time candidate inspection.
+  # In agentic_search mode this is informational; search scope is always ./.skills/.
+  # In vector_search mode it controls recommendation-time candidate inspection.
   mode: recommend_plus_skill_md
 
 skill_library:
@@ -36,8 +36,8 @@ skill_library:
     - "**/dist/**"
     - "**/build/**"
 
-# Optional vector retrieval settings.
-# These are used only when retrieval.method is vector.
+# Optional vector_search settings.
+# These are used only when retrieval.method is vector_search.
 #
 # chroma:
 #  path: ../output/chroma/skills_vote_local
@@ -53,7 +53,7 @@ skill_library:
 #  extra_headers: {}
 #
 # retrieval:
-#  method: vector
+#  method: vector_search
 #  top_k: 5
 #
 # indexing:

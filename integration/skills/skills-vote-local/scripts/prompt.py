@@ -2,7 +2,7 @@ from __future__ import annotations
 
 
 def render_recommend_command() -> str:
-    return 'uv run -qq python scripts/recommend.py \\\n  -q "<rewritten query>"'
+    return 'uv run -qq scripts/recommend.py \\\n  -q "<rewritten query>"'
 
 
 def render_missing_config_prompt() -> str:
@@ -21,7 +21,7 @@ Next steps:
 3. Then rerun:
 
 ```bash
-uv run -qq python scripts/route_prompt.py --role main
+uv run -qq scripts/route_prompt.py --role main
 ```
 
 If setup is not authorized, report this configuration blocker instead of guessing a retrieval workflow.
@@ -39,13 +39,13 @@ config/config.yaml contains unsupported fields:
 {joined_errors}
 
 Do not run recommend.py.
-Do not run agentic grep.
+Do not run agentic search.
 Do not guess how unsupported fields should behave.
 
 Update config/config.yaml to use only the supported schema from config/config.yaml.example, then rerun:
 
 ```bash
-uv run -qq python scripts/route_prompt.py --role main
+uv run -qq scripts/route_prompt.py --role main
 ```
 
 If you are a subagent, return no selected skills and explain that local skill retrieval is unavailable because config/config.yaml contains unsupported fields.
@@ -244,7 +244,7 @@ detailed search traces, copy long passages from skill files, or make unsupported
 claims about skills that were not read or lack evidence."""
 
 
-def render_vector_main_single_pass(*, skill_root: str) -> str:
+def render_vector_search_main_single_pass(*, skill_root: str) -> str:
     return f"""## Required workflow
 
 You are the main agent.
@@ -265,7 +265,7 @@ Do not do exploratory query refinement in single-pass mode.
 After you select a skill, retrieval_context no longer restricts execution-time use of that selected skill."""
 
 
-def render_vector_main_multi_pass(*, skill_root: str, max_passes: int) -> str:
+def render_vector_search_main_multi_pass(*, skill_root: str, max_passes: int) -> str:
     return f"""## Required workflow
 
 You are the main agent.
@@ -286,7 +286,7 @@ Stop as soon as the recommendation is stable.
 After you select a skill, retrieval_context no longer restricts execution-time use of that selected skill."""
 
 
-def render_vector_main_delegated(
+def render_vector_search_main_delegated(
     *,
     handoff_path: str,
     max_passes: int,
@@ -329,14 +329,14 @@ The retrieval_context policy applies to the subagent during the normal delegated
 If the current host, tool policy, runtime, or authorization model cannot create a subagent in this turn, run:
 
 ```bash
-uv run -qq python scripts/route_prompt.py --role main --fallback
+uv run -qq scripts/route_prompt.py --role main --fallback
 ```
 
 Then follow the rendered fallback stdout exactly.
 When using fallback, explain that the configured subagent route could not be used in this turn due to host/tooling/runtime constraints."""
 
 
-def render_vector_subagent_single_pass(*, skill_root: str) -> str:
+def render_vector_search_subagent_single_pass(*, skill_root: str) -> str:
     return f"""## Required workflow
 
 You are the delegated subagent.
@@ -356,7 +356,9 @@ Do not do exploratory query refinement in single-pass mode.
 Return strict JSON only."""
 
 
-def render_vector_subagent_multi_pass(*, skill_root: str, max_passes: int) -> str:
+def render_vector_search_subagent_multi_pass(
+    *, skill_root: str, max_passes: int
+) -> str:
     return f"""## Required workflow
 
 You are the delegated subagent.
@@ -420,7 +422,7 @@ This restriction applies only to recommendation-time evidence, not to execution-
     raise ValueError(f"Unsupported retrieval_context.mode: {mode}")
 
 
-def render_vector_debug_notes() -> str:
+def render_vector_search_debug_notes() -> str:
     return """## Debug and config notes
 
 Read doc/config-schema.md only when you need to create or edit config/config.yaml, or when recommend.py reports a config problem.
@@ -430,11 +432,11 @@ Usually do not run scripts/index.py unless a full rebuild is explicitly needed.
 For setup/debug only, you may run:
 
 ```bash
-uv run -qq python scripts/check_env.py
+uv run -qq scripts/check_env.py
 ```"""
 
 
-def render_vector_subagent_json_schema() -> str:
+def render_vector_search_subagent_json_schema() -> str:
     return """## Final response contract
 
 Return strict JSON only. Do not use Markdown, bullets, code fences, or explanation outside the JSON object.
@@ -470,8 +472,8 @@ def render_agentic_sync_failed_prompt(*, skills_root: str) -> str:
 
 .skills sync failed.
 
-Do not run vector retrieval.
-Do not run agentic grep until ./.skills/ is available.
+Do not run vector_search.
+Do not run agentic search until ./.skills/ is available.
 
 Report the sync error and ask the user to fix:
 
@@ -488,9 +490,9 @@ def render_agentic_common_policy(
     retrieval_context: str,
     skills_root: str,
 ) -> str:
-    return f"""## Agentic grep retrieval policy
+    return f"""## Agentic search retrieval policy
 
-retrieval.method = agentic_grep
+retrieval.method = agentic_search
 retrieval_context.mode = {retrieval_context}
 
 Run grep commands from the skills-vote-local project root.
@@ -498,15 +500,15 @@ In this prompt, ./.skills/ means {skills_root}/.
 
 During retrieval, ./.skills/ is the only corpus.
 Treat files outside ./.skills/ as out of scope unless this rendered route explicitly says otherwise.
-Do not run the vector recommendation helper.
+Do not run the vector_search helper.
 Do not run index.py.
-Do not use vector retrieval.
+Do not use vector_search.
 Do not use embedding retrieval.
 Do not use helper retrieval scripts unless the rendered route explicitly says so.
 Do not use web search for this retrieval route.
 For this route, use the provided find/grep commands for reproducible bounded retrieval.
 
-retrieval_context.mode does not restrict search scope in agentic_grep mode.
+retrieval_context.mode does not restrict search scope in agentic_search mode.
 Search SKILL.md first.
 Search full skill directories only when needed.
 
@@ -522,14 +524,14 @@ def render_agentic_delegated_policy_summary(
     *,
     retrieval_context: str,
 ) -> str:
-    return f"""## Agentic grep delegation summary
+    return f"""## Agentic search delegation summary
 
-retrieval.method = agentic_grep
+retrieval.method = agentic_search
 retrieval_context.mode = {retrieval_context}
 
 The route has already synced ./.skills/.
 The main agent does not search ./.skills/ in the normal delegated path.
-The subagent renders its own route and receives the full agentic grep policy.
+The subagent renders its own route and receives the full agentic search policy.
 If fallback is required, the main-agent fallback route renders the full policy then."""
 
 
@@ -572,16 +574,16 @@ Do not inspect candidate skill directories.
 The subagent must render its own route by running:
 
 ```bash
-uv run -qq python scripts/route_prompt.py --role subagent
+uv run -qq scripts/route_prompt.py --role subagent
 ```
 
 The subagent must follow that stdout exactly.
-If that route says retrieval.method = agentic_grep, the subagent must use find and grep over ./.skills/ and must not use vector retrieval helpers.
+If that route says retrieval.method = agentic_search, the subagent must use find and grep over ./.skills/ and must not use vector_search helpers.
 
 If the current host, tool policy, runtime, or authorization model cannot create a subagent in this turn, then run the main-agent fallback route:
 
 ```bash
-uv run -qq python scripts/route_prompt.py --role main --fallback
+uv run -qq scripts/route_prompt.py --role main --fallback
 ```
 
 Then follow the rendered fallback stdout exactly.
@@ -736,7 +738,7 @@ Read doc/config-schema.md only when you need to create or edit config/config.yam
 For setup/debug only, you may run:
 
 ```bash
-uv run -qq python scripts/check_env.py
+uv run -qq scripts/check_env.py
 ```"""
 
 

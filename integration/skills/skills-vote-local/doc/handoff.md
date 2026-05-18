@@ -11,13 +11,13 @@ Work from the `skills-vote-local` skill root directory.
 The subagent must render its own route:
 
 ```bash
-uv run -qq python scripts/route_prompt.py --role subagent
+uv run -qq scripts/route_prompt.py --role subagent
 ```
 
 Then follow the rendered stdout exactly.
 
-The rendered stdout may select vector retrieval or `agentic_grep`.
-If it selects `agentic_grep`, search only the synced `./.skills/` namespace exactly as the route prompt instructs.
+The rendered stdout may select vector_search or `agentic_search`.
+If it selects `agentic_search`, search only the synced `./.skills/` namespace exactly as the route prompt instructs.
 
 Do not read `SKILL.md`, `doc/config-schema.md`, or files under `scripts/` unless the route prompt tells you to.
 

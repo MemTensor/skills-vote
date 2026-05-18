@@ -14,7 +14,7 @@ All paths mentioned in this file are relative to this skill root. `cd` to this r
 Run:
 
 ```bash
-uv run -qq python scripts/route_prompt.py --role main
+uv run -qq scripts/route_prompt.py --role main
 ```
 
 Then follow the rendered stdout exactly.
@@ -27,7 +27,7 @@ Do not use fallback merely because the current user message did not repeat "use 
 If the current host, tool policy, runtime, or authorization model cannot create a subagent in this turn, run:
 
 ```bash
-uv run -qq python scripts/route_prompt.py --role main --fallback
+uv run -qq scripts/route_prompt.py --role main --fallback
 ```
 
 Then follow the fallback stdout exactly.
@@ -35,7 +35,7 @@ Then follow the fallback stdout exactly.
 If you are a subagent and you read this file directly, do not run this command with `--role main`. Run:
 
 ```bash
-uv run -qq python scripts/route_prompt.py --role subagent
+uv run -qq scripts/route_prompt.py --role subagent
 ```
 
 Then follow the rendered stdout exactly.

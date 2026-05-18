@@ -1,4 +1,8 @@
 #!/usr/bin/env python3
+# /// script
+# dependencies = ["PyYAML>=6.0.3,<7.0.0"]
+# ///
+
 from __future__ import annotations
 
 import argparse
@@ -200,7 +204,7 @@ def load_router_config(role: str, *, fallback: bool = False) -> RouterConfig:
         )
 
     sync_result = None
-    if config_loaded and not config_errors and retrieval_method == "agentic_grep":
+    if config_loaded and not config_errors and retrieval_method == "agentic_search":
         sync_result = sync_skill_namespace(config, config_path)
         warnings.extend(sync_result.warnings)
         warnings.extend(sync_result.errors)
@@ -355,7 +359,9 @@ def _render_agentic_workflow(role: str, config: RouterConfig, *, fallback: bool)
     return "\n\n".join(body_parts)
 
 
-def _render_vector_workflow(role: str, config: RouterConfig, *, fallback: bool) -> str:
+def _render_vector_search_workflow(
+    role: str, config: RouterConfig, *, fallback: bool
+) -> str:
     effective_mode = (
         _main_equivalent_mode(config.resolved_mode)
         if fallback
@@ -368,7 +374,7 @@ def _render_vector_workflow(role: str, config: RouterConfig, *, fallback: bool) 
 
     if role == "main" and not fallback and config.resolved_mode.startswith("subagent_"):
         body_parts.append(
-            prompt.render_vector_main_delegated(
+            prompt.render_vector_search_main_delegated(
                 handoff_path=str(HANDOFF_PATH),
                 max_passes=config.configured_max_passes,
                 single_pass=single_pass,
@@ -379,22 +385,24 @@ def _render_vector_workflow(role: str, config: RouterConfig, *, fallback: bool) 
     if role == "subagent":
         if single_pass:
             body_parts.append(
-                prompt.render_vector_subagent_single_pass(skill_root=str(SKILL_ROOT))
+                prompt.render_vector_search_subagent_single_pass(
+                    skill_root=str(SKILL_ROOT)
+                )
             )
         else:
             body_parts.append(
-                prompt.render_vector_subagent_multi_pass(
+                prompt.render_vector_search_subagent_multi_pass(
                     skill_root=str(SKILL_ROOT),
                     max_passes=config.configured_max_passes,
                 )
             )
     elif single_pass:
         body_parts.append(
-            prompt.render_vector_main_single_pass(skill_root=str(SKILL_ROOT))
+            prompt.render_vector_search_main_single_pass(skill_root=str(SKILL_ROOT))
         )
     else:
         body_parts.append(
-            prompt.render_vector_main_multi_pass(
+            prompt.render_vector_search_main_multi_pass(
                 skill_root=str(SKILL_ROOT),
                 max_passes=config.configured_max_passes,
             )
@@ -405,9 +413,9 @@ def _render_vector_workflow(role: str, config: RouterConfig, *, fallback: bool) 
             prompt.render_retrieval_context_policy(config.retrieval_context)
         )
     if _should_render_debug_notes(role, config.resolved_mode, fallback=fallback):
-        body_parts.append(prompt.render_vector_debug_notes())
+        body_parts.append(prompt.render_vector_search_debug_notes())
     if role == "subagent":
-        body_parts.append(prompt.render_vector_subagent_json_schema())
+        body_parts.append(prompt.render_vector_search_subagent_json_schema())
     return "\n\n".join(body_parts)
 
 
@@ -421,16 +429,18 @@ def render_route_prompt(
         body_parts.append(
             prompt.render_invalid_config_prompt(config_errors=config.config_errors)
         )
-    elif config.retrieval_method == "agentic_grep" and (
+    elif config.retrieval_method == "agentic_search" and (
         config.sync_result is None or not config.sync_result.ok
     ):
         body_parts.append(
             prompt.render_agentic_sync_failed_prompt(skills_root=str(SKILLS_ROOT))
         )
-    elif config.retrieval_method == "agentic_grep":
+    elif config.retrieval_method == "agentic_search":
         body_parts.append(_render_agentic_workflow(role, config, fallback=fallback))
     else:
-        body_parts.append(_render_vector_workflow(role, config, fallback=fallback))
+        body_parts.append(
+            _render_vector_search_workflow(role, config, fallback=fallback)
+        )
     rendered_body = "\n\n".join(body_parts)
     unresolved_placeholders = _find_unresolved_placeholders(rendered_body)
     if unresolved_placeholders:
