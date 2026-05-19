@@ -90,8 +90,8 @@ Each experiment YAML combines Harbor runtime settings and SkillsVote settings. B
 | Setting | Meaning |
 | --- | --- |
 | Baseline | - |
-| Offline | Collect offline experience and test with recommendation|
-| Online |  |
+| Offline | Skill library built with historical tasks, transferred to unseen tasks for recommendation only |
+| Online | Starting from an empty skill library for recommendation and evolution |
 
 The examples below use `gpt_5_4_mini`. To run another model, use the matching model directory under `scripts/configs/**/codex/` and the matching script under `scripts/`.
 
