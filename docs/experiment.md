@@ -1,10 +1,8 @@
 # Experiment Guide
 
-SkillsVote runs benchmark experiments on top of [Harbor](https://github.com/harbor-framework/harbor). This guide is intended for reproducing the published experiments.
+The evaluation of benchmark is build on [Harbor](https://github.com/harbor-framework/harbor). This guide is intended for reproducing the published experiments.
 
 ## Repository Layout
-
-Only the files and module groups needed for running experiments are shown here.
 
 ```text
 .
