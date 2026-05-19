@@ -8,15 +8,15 @@ def render_recommend_command() -> str:
 def render_missing_config_prompt() -> str:
     return """## Missing default config
 
-Default config/config.yaml was not found or could not be loaded.
+Default configs/config.yaml was not found or could not be loaded.
 
 Do not run recommend.py yet.
 
-Local skill retrieval is not configured until config/config.yaml exists and can be loaded.
+Local skill retrieval is not configured until configs/config.yaml exists and can be loaded.
 
 Next steps:
 
-1. If setup is authorized, create config/config.yaml from config/config.yaml.example.
+1. If setup is authorized, create configs/config.yaml from configs/config.yaml.example.
 2. Configure skill_library.include to point at one or more skill libraries.
 3. Then rerun:
 
@@ -27,14 +27,14 @@ uv run -qq scripts/route_prompt.py --role main
 If setup is not authorized, report this configuration blocker instead of guessing a retrieval workflow.
 
 If you are a subagent, return no selected skills and explain that retrieval is unavailable because the default config is missing.
-Example response shape: `{"skills": [], "reason": "Default config/config.yaml was not found, so local skill retrieval is not configured yet."}`."""
+Example response shape: `{"skills": [], "reason": "Default configs/config.yaml was not found, so local skill retrieval is not configured yet."}`."""
 
 
 def render_invalid_config_prompt(*, config_errors: list[str]) -> str:
     joined_errors = "\n".join(f"- {error}" for error in config_errors)
     return f"""## Invalid config
 
-config/config.yaml contains unsupported fields:
+configs/config.yaml contains unsupported fields:
 
 {joined_errors}
 
@@ -42,14 +42,14 @@ Do not run recommend.py.
 Do not run agentic search.
 Do not guess how unsupported fields should behave.
 
-Update config/config.yaml to use only the supported schema from config/config.yaml.example, then rerun:
+Update configs/config.yaml to use only the supported schema from configs/config.yaml.example, then rerun:
 
 ```bash
 uv run -qq scripts/route_prompt.py --role main
 ```
 
-If you are a subagent, return no selected skills and explain that local skill retrieval is unavailable because config/config.yaml contains unsupported fields.
-Example response shape: `{{"skills": [], "reason": "config/config.yaml contains unsupported fields, so local skill retrieval is unavailable until the config is updated."}}`."""
+If you are a subagent, return no selected skills and explain that local skill retrieval is unavailable because configs/config.yaml contains unsupported fields.
+Example response shape: `{{"skills": [], "reason": "configs/config.yaml contains unsupported fields, so local skill retrieval is unavailable until the config is updated."}}`."""
 
 
 def render_fallback_preamble() -> str:
@@ -414,7 +414,7 @@ Suggested command:
 find <skill_dir> -maxdepth 2 -type f | sort
 ```
 
-You may read README.md, doc/*.md, docs/*.md, small manifest/config-like files, and a small number of clearly relevant usage scripts.
+You may read README.md, docs/*.md, small manifest/config-like files, and a small number of clearly relevant usage scripts.
 Skip .git, .venv, node_modules, __pycache__, dist, build, large generated files, binary files, and unrelated deep trees.
 This is shallow directory understanding, not a full source audit.
 This restriction applies only to recommendation-time evidence, not to execution-time use after a skill has been selected."""
@@ -425,7 +425,7 @@ This restriction applies only to recommendation-time evidence, not to execution-
 def render_vector_search_debug_notes() -> str:
     return """## Debug and config notes
 
-Read doc/config-schema.md only when you need to create or edit config/config.yaml, or when recommend.py reports a config problem.
+Read docs/config-schema.md only when you need to create or edit configs/config.yaml, or when recommend.py reports a config problem.
 
 recommend.py automatically runs incremental update before querying.
 Usually do not run scripts/index.py unless a full rebuild is explicitly needed.
@@ -734,7 +734,7 @@ find -H ./.skills/* \\
 def render_agentic_debug_notes() -> str:
     return """## Debug and config notes
 
-Read doc/config-schema.md only when you need to create or edit config/config.yaml, or when .skills sync reports a config problem.
+Read docs/config-schema.md only when you need to create or edit configs/config.yaml, or when .skills sync reports a config problem.
 For setup/debug only, you may run:
 
 ```bash

@@ -19,6 +19,6 @@ Then follow the rendered stdout exactly.
 The rendered stdout may select vector_search or `agentic_search`.
 If it selects `agentic_search`, search only the synced `./.skills/` namespace exactly as the route prompt instructs.
 
-Do not read `SKILL.md`, `doc/config-schema.md`, or files under `scripts/` unless the route prompt tells you to.
+Do not read `SKILL.md`, `docs/config-schema.md`, or files under `scripts/` unless the route prompt tells you to.
 
 If `scripts/route_prompt.py` cannot run, return strict JSON with `skills: []` and a `reason` explaining that the route prompt could not be loaded.

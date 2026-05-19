@@ -5,7 +5,7 @@ description: Use when retrieving the most relevant skills from a local or privat
 
 # Skills Vote Local
 
-Read only this file first. Do not read `scripts/`, `doc/`, or any other files in this skill unless this file or a script output explicitly tells you to do so.
+Read only this file first. Do not read `scripts/`, `docs/`, or any other files in this skill unless this file or a script output explicitly tells you to do so.
 
 Use this skill when the current task needs skill discovery from a local or private skill library instead of a network service.
 

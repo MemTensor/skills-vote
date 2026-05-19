@@ -1,6 +1,6 @@
 # Config schema
 
-`skills-vote-local` reads `config/config.yaml` by default.
+`skills-vote-local` reads `configs/config.yaml` by default.
 
 Production recommendation: start with `retrieval.method: agentic_search`.
 It needs only a skill-library glob and does not require Chroma, an embedding

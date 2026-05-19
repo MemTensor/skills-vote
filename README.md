@@ -89,10 +89,11 @@ Use this integration when you want agents to retrieve skills from the hosted Ski
 Supercharge your agents (Codex, Claude Code, OpenClaw) by integrating SkillsVote directly! Just drop this prompt into your agent:
 
 ```markdown
-1. Install the skill by running `npx skills add MemTensor/skills-vote --skill skills-vote`
-2. Create or update `.env` file located in the root directory of the installed `skills-vote` skill and set `SKILLS_VOTE_API_KEY="YOUR_API_KEY"`
+Install the `skills-vote` skill following https://raw.githubusercontent.com/MemTensor/skills-vote/main/integration/skills/INSTALL.md
 
-Do not configure this as a system or user-level environment variable unless explicitly requested.
+Use the following values: 
+- `SKILLS_VOTE_API_KEY`: "YOUR_API_KEY"
+- `GH_TOKEN`: "YOUR_GITHUB_TOKEN"
 ```
 
 #### 🔧 Manual Setup Alternative
@@ -124,7 +125,7 @@ Use this integration when your skills are stored in a local or private `SKILL.md
 #### 🤖 Agent Setup Prompt
 
 ```markdown
-Help me install the local skills-vote-local skill following https://raw.githubusercontent.com/MemTensor/skills-vote/main/integration/skills/INSTALL.md
+Install the `skills-vote-local` skill following https://raw.githubusercontent.com/MemTensor/skills-vote/main/integration/skills/INSTALL.md
 ```
 
 #### 🔧 Manual Setup Alternative

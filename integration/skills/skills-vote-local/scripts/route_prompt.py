@@ -22,7 +22,7 @@ from config_validation import (
 from sync_skills import PROJECT_ROOT, SKILLS_ROOT, SyncResult, sync_skill_namespace
 
 SKILL_ROOT = PROJECT_ROOT
-HANDOFF_PATH = SKILL_ROOT / "doc" / "handoff.md"
+HANDOFF_PATH = SKILL_ROOT / "docs" / "handoff.md"
 DEFAULT_MODE = "subagent_multi_pass"
 DEFAULT_MAX_PASSES = 3
 DEFAULT_CONTEXT = "recommend_plus_skill_md"
@@ -98,7 +98,7 @@ def _read_config(config_path: Path, warnings: list[str]) -> tuple[dict[str, Any]
         warnings.append(
             "Unsupported config field(s): "
             + ", ".join(unsupported_fields)
-            + ". Remove or rename unsupported fields in config/config.yaml."
+            + ". Remove or rename unsupported fields in configs/config.yaml."
         )
         return loaded, True
 

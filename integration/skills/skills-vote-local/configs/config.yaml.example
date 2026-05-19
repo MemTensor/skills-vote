@@ -1,5 +1,5 @@
 # Production starter config for skills-vote-local.
-# Copy this file to config/config.yaml, then replace skill_library.include.
+# Copy this file to configs/config.yaml, then replace skill_library.include.
 
 routing:
   # main_single_pass | main_multi_pass | subagent_single_pass | subagent_multi_pass
