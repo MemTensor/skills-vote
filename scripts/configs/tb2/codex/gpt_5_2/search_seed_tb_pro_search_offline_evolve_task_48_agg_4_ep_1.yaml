@@ -1,0 +1,42 @@
+jobs_dir: output
+job_name: tb2_codex_gpt_5_2_medium_search_seed_tb_pro_search_offline_evolve_task_48_agg_4_ep_1__${now:%Y-%m-%d__%H-%M-%S}
+n_attempts: 5
+quiet: false
+n_concurrent_trials: 8
+retry:
+  max_retries: 3
+  exclude_exceptions:
+    - VerifierTimeoutError
+    - RewardFileNotFoundError
+    - RewardFileEmptyError
+    - VerifierOutputParseError
+agent_timeout_multiplier: 4.0
+environment:
+  type: docker
+  force_build: false
+  delete: false
+  mounts_json:
+    - type: bind
+      source: ${skills_vote.seed_skills_dir}
+      target: /skills
+      read_only: true
+agents:
+  - import_path: skills_vote.harbor.agents:SkillsVoteCodex
+    model_name: openai/gpt-5.2
+    kwargs:
+      reasoning_effort: medium
+      reasoning_summary: auto
+      version: "0.125.0"
+      allowed_skills: []
+      allowed_plugins: []
+      recommend:
+        skills_dir: /skills
+        prompt_path: skills_vote.recommend.prompt:build
+datasets:
+  - name: terminal-bench
+    version: "2.0"
+    download_dir: input/tb2
+skills_vote:
+  register_import_paths:
+    - skills_vote.harbor.hooks:register_cost
+  seed_skills_dir: ${abspath:.skills_vote/gpt_5_2_medium_tb_pro_search_offline_evolve_task_48_agg_4_ep_1}

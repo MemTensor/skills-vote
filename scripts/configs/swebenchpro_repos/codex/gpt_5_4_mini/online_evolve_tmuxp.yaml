@@ -1,0 +1,52 @@
+session_name: swebenchpro_codex_online_evolve_repos
+start_directory: ../../../../..
+before_script: bash -lc 'cd "$(git rev-parse --show-toplevel)" && mkdir -p .skills_vote/.tmuxp && date +%Y-%m-%d__%H-%M-%S > .skills_vote/.tmuxp/swebenchpro_codex_online_evolve_repos.timestamp'
+shell_command_before:
+  - cd "$(git rev-parse --show-toplevel)"
+  - export SVT_RUN_TIMESTAMP="$(cat .skills_vote/.tmuxp/swebenchpro_codex_online_evolve_repos.timestamp)"
+  - printf 'SVT_RUN_TIMESTAMP=%s\n' "$SVT_RUN_TIMESTAMP"
+windows:
+  - window_name: ansible-ansible
+    panes:
+      - shell_command:
+          - uv run svt run -c scripts/configs/swebenchpro_repos/codex/gpt_5_4_mini/ansible_ansible_online_evolve.yaml -y job_name=swebenchpro_repos_codex_ansible_ansible_online_evolve_${SVT_RUN_TIMESTAMP}
+  - window_name: openlibrary
+    panes:
+      - shell_command:
+          - uv run svt run -c scripts/configs/swebenchpro_repos/codex/gpt_5_4_mini/internetarchive_openlibrary_online_evolve.yaml -y job_name=swebenchpro_repos_codex_internetarchive_openlibrary_online_evolve_${SVT_RUN_TIMESTAMP}
+  - window_name: flipt
+    panes:
+      - shell_command:
+          - uv run svt run -c scripts/configs/swebenchpro_repos/codex/gpt_5_4_mini/flipt_io_flipt_online_evolve.yaml -y job_name=swebenchpro_repos_codex_flipt_io_flipt_online_evolve_${SVT_RUN_TIMESTAMP}
+  - window_name: qutebrowser
+    panes:
+      - shell_command:
+          - uv run svt run -c scripts/configs/swebenchpro_repos/codex/gpt_5_4_mini/qutebrowser_qutebrowser_online_evolve.yaml -y job_name=swebenchpro_repos_codex_qutebrowser_qutebrowser_online_evolve_${SVT_RUN_TIMESTAMP}
+  - window_name: teleport
+    panes:
+      - shell_command:
+          - uv run svt run -c scripts/configs/swebenchpro_repos/codex/gpt_5_4_mini/gravitational_teleport_online_evolve.yaml -y job_name=swebenchpro_repos_codex_gravitational_teleport_online_evolve_${SVT_RUN_TIMESTAMP}
+  - window_name: protonmail
+    panes:
+      - shell_command:
+          - uv run svt run -c scripts/configs/swebenchpro_repos/codex/gpt_5_4_mini/protonmail_webclients_online_evolve.yaml -y job_name=swebenchpro_repos_codex_protonmail_webclients_online_evolve_${SVT_RUN_TIMESTAMP}
+  - window_name: vuls
+    panes:
+      - shell_command:
+          - uv run svt run -c scripts/configs/swebenchpro_repos/codex/gpt_5_4_mini/future_architect_vuls_online_evolve.yaml -y job_name=swebenchpro_repos_codex_future_architect_vuls_online_evolve_${SVT_RUN_TIMESTAMP}
+  - window_name: navidrome
+    panes:
+      - shell_command:
+          - uv run svt run -c scripts/configs/swebenchpro_repos/codex/gpt_5_4_mini/navidrome_navidrome_online_evolve.yaml -y job_name=swebenchpro_repos_codex_navidrome_navidrome_online_evolve_${SVT_RUN_TIMESTAMP}
+  - window_name: element-web
+    panes:
+      - shell_command:
+          - uv run svt run -c scripts/configs/swebenchpro_repos/codex/gpt_5_4_mini/element_hq_element_web_online_evolve.yaml -y job_name=swebenchpro_repos_codex_element_hq_element_web_online_evolve_${SVT_RUN_TIMESTAMP}
+  - window_name: nodebb
+    panes:
+      - shell_command:
+          - uv run svt run -c scripts/configs/swebenchpro_repos/codex/gpt_5_4_mini/nodebb_nodebb_online_evolve.yaml -y job_name=swebenchpro_repos_codex_nodebb_nodebb_online_evolve_${SVT_RUN_TIMESTAMP}
+  - window_name: tutanota
+    panes:
+      - shell_command:
+          - uv run svt run -c scripts/configs/swebenchpro_repos/codex/gpt_5_4_mini/tutao_tutanota_online_evolve.yaml -y job_name=swebenchpro_repos_codex_tutao_tutanota_online_evolve_${SVT_RUN_TIMESTAMP}

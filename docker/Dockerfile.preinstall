@@ -1,0 +1,48 @@
+ARG BASE_IMAGE
+FROM ${BASE_IMAGE}
+
+ARG NVM_VERSION=v0.40.4
+ARG NODE_VERSION=22
+ARG CODEX_VERSION=latest
+
+ENV NVM_DIR=/opt/nvm
+ENV BASH_ENV=/etc/profile.d/nvm.sh
+ENV PATH=/usr/local/bin:/opt/nvm/current/bin:${PATH}
+
+RUN set -eu; \
+    if ldd --version 2>&1 | grep -qi musl || [ -f /etc/alpine-release ]; then \
+        apk add --no-cache curl bash nodejs npm ripgrep; \
+    elif command -v apt-get >/dev/null 2>&1; then \
+        apt-get update && apt-get install -y curl ripgrep; \
+    elif command -v yum >/dev/null 2>&1; then \
+        yum install -y curl ripgrep; \
+    else \
+        echo "Warning: No known package manager found, assuming curl is available" >&2; \
+    fi
+
+RUN set -eu; \
+    codex_pkg="@openai/codex@${CODEX_VERSION}"; \
+    if ! ldd --version 2>&1 | grep -qi musl && [ ! -f /etc/alpine-release ]; then \
+        bash -lc ' \
+            set -euo pipefail; \
+            mkdir -p "$NVM_DIR"; \
+            curl -o- "https://raw.githubusercontent.com/nvm-sh/nvm/${NVM_VERSION}/install.sh" | PROFILE=/dev/null NVM_DIR="$NVM_DIR" bash; \
+            . "$NVM_DIR/nvm.sh"; \
+            nvm install "$NODE_VERSION"; \
+            nvm alias default "$NODE_VERSION"; \
+            nvm use "$NODE_VERSION"; \
+            node_dir="$NVM_DIR/versions/node/$(nvm version "$NODE_VERSION")"; \
+            ln -sfn "$node_dir" "$NVM_DIR/current"; \
+            printf "%s\n" \
+                "export NVM_DIR=/opt/nvm" \
+                "[ -s \"\$NVM_DIR/nvm.sh\" ] && . \"\$NVM_DIR/nvm.sh\"" \
+                > /etc/profile.d/nvm.sh; \
+            mkdir -p /usr/local/bin; \
+            for bin in node npm npx codex; do \
+                ln -sf "$node_dir/bin/$bin" "/usr/local/bin/$bin"; \
+            done \
+        '; \
+    fi; \
+    npm -v; \
+    npm install -g "$codex_pkg"; \
+    codex --version

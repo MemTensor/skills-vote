@@ -1,0 +1,54 @@
+jobs_dir: output
+job_name: swebenchpro_repos_codex_gpt_5_5_xhigh_protonmail_webclients_search_online_evolve__${now:%Y-%m-%d__%H-%M-%S}
+n_attempts: 1
+quiet: false
+n_concurrent_trials: 1
+retry:
+  max_retries: 3
+  exclude_exceptions:
+    - VerifierTimeoutError
+    - RewardFileNotFoundError
+    - RewardFileEmptyError
+    - VerifierOutputParseError
+agent_timeout_multiplier: 4.0
+environment:
+  type: docker
+  force_build: false
+  delete: false
+  mounts_json:
+    - type: bind
+      source: ${skills_vote.working_skills_dir}
+      target: /skills
+      read_only: true
+agents:
+  - import_path: skills_vote.harbor.agents:SkillsVoteCodex
+    model_name: openai/gpt-5.5
+    kwargs:
+      version: "0.125.0"
+      reasoning_effort: xhigh
+      reasoning_summary: auto
+      allowed_skills: []
+      allowed_plugins: []
+      recommend:
+        skills_dir: /skills
+        prompt_path: skills_vote.recommend.prompt:build
+datasets:
+  - name: swebenchpro
+    version: "1.0"
+    download_dir: input/swebenchpro
+    task_names:
+      - instance_protonmail__webclients-*
+skills_vote:
+  register_import_paths:
+    - skills_vote.harbor.hooks:register_cost
+    - skills_vote.harbor.hooks:register
+  codex_home: ${abspath:.skills_vote/.codex_gpt_5_5_xhigh}
+  working_skills_dir: ${abspath:${jobs_dir}/${job_name}/working_skills}
+  skill_backup_dir: ${abspath:${jobs_dir}/${job_name}/skills_backup}
+  feedback_prompt_path: skills_vote.feedback.prompt:build
+  evolve_prompt_path: skills_vote.evolve.prompt:build
+  evolve_timeout_sec: 1800
+  evolve_every_n_trials: 1
+  feedback_verifier_summary_extractors:
+    - output_json
+    - reward

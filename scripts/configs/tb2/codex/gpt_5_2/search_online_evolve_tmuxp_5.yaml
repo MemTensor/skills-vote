@@ -1,0 +1,29 @@
+session_name: tb2_codex_gpt_5_2_medium_search_online_evolve_tmuxp_5
+start_directory: ../../../../..
+before_script: bash -lc 'cd "$(git rev-parse --show-toplevel)" && mkdir -p .skills_vote/.tmuxp && date +%Y-%m-%d__%H-%M-%S > .skills_vote/.tmuxp/tb2_codex_gpt_5_2_medium_search_online_evolve_tmuxp_5.timestamp'
+shell_command_before:
+  - cd "$(git rev-parse --show-toplevel)"
+  - export SVT_RUN_TIMESTAMP="$(cat .skills_vote/.tmuxp/tb2_codex_gpt_5_2_medium_search_online_evolve_tmuxp_5.timestamp)"
+  - export SVT_CONFIG="scripts/configs/tb2/codex/gpt_5_2/search_online_evolve.yaml"
+  - printf 'SVT_RUN_TIMESTAMP=%s\n' "$SVT_RUN_TIMESTAMP"
+windows:
+  - window_name: evolve-1
+    panes:
+      - shell_command:
+          - uv run svt run -c "$SVT_CONFIG" -y job_name=tb2_codex_gpt_5_2_medium_search_online_evolve_1_${SVT_RUN_TIMESTAMP}
+  - window_name: evolve-2
+    panes:
+      - shell_command:
+          - uv run svt run -c "$SVT_CONFIG" -y job_name=tb2_codex_gpt_5_2_medium_search_online_evolve_2_${SVT_RUN_TIMESTAMP}
+  - window_name: evolve-3
+    panes:
+      - shell_command:
+          - uv run svt run -c "$SVT_CONFIG" -y job_name=tb2_codex_gpt_5_2_medium_search_online_evolve_3_${SVT_RUN_TIMESTAMP}
+  - window_name: evolve-4
+    panes:
+      - shell_command:
+          - uv run svt run -c "$SVT_CONFIG" -y job_name=tb2_codex_gpt_5_2_medium_search_online_evolve_4_${SVT_RUN_TIMESTAMP}
+  - window_name: evolve-5
+    panes:
+      - shell_command:
+          - uv run svt run -c "$SVT_CONFIG" -y job_name=tb2_codex_gpt_5_2_medium_search_online_evolve_5_${SVT_RUN_TIMESTAMP}

@@ -1,0 +1,89 @@
+max_workers: 32
+datasets:
+  - name: terminal-bench
+    version: "2.0"
+    download_dir: input/tb2
+    registry_url: null
+    registry_path: null
+    task_names: []
+    exclude_task_names: []
+    image_registry: local
+    image_tag: "20260426"
+  - name: terminal-bench-pro
+    version: "1.0"
+    download_dir: input/tb-pro
+    registry_url: null
+    registry_path: null
+    task_names:
+      # software-engineering
+      - dual-bash-python-config-parser
+      - build-grpc-user-profile-service
+      - polyglot-yaml-config-validator
+      - polyglot-bash-python-config-validator
+      - prove-nat-mult-commutativity-in-coq
+      - recover-git-reflog-commits
+      - polyglot-bash-python-config-parser
+      - polyglot-prime-generator
+      - advanced-poker-hand-classifier
+      # - optimize-triton-rope-kernel # pip install timeout
+      - implement-go-board-analyzer
+      - optimal-2x2x2-cube-solver
+      - polyglot-text-stats-script
+      - merge-git-bundles-and-implement-transform
+      - make-ascii-fits-keywords-case-insensitive
+      - merge-parser-branches
+      - cube-grid-cross-expansion
+      - fix-color-lib-hash-and-pickle
+      - implement-idcard-flask-api
+      - implement-sales-processor-engine
+      - python-prime-http-server
+      - mcts-solver-for-15-puzzle
+      - reverse-engineer-kvstore-binary-protocol
+      - build-prime-factorization-http-api
+      - schedule-multi-team-kickoff-meeting
+      # system-administration
+      - build-arm64-qemu-linux-with-custom-message
+      - cmake-build-for-cpp-console-app
+      - implement-depgraph-dependency-resolver
+      - build-qemu-arm-user-emulator
+      - optimize-portfolio-allocation
+      - configure-localhost-ssh-key-login
+      - compare-cmake-build-types-performance
+      - compile-postgresql-with-sanitizers
+      - configure-apache-analytics-virtualhost
+      - setup-ubuntu-vm-ssh-key-auth
+      - build-coq-from-source
+      - boot-debian-qemu-with-ssh-check
+      - generate-llvm-ir-with-dwarf-debug
+      - reproducible-latex-pdf-build-script
+      - secure-db-migration-and-wipe
+      - build-nginx-1-24-production-server
+      - resolve-react-peer-deps
+      - reverse-engineer-physics-simulator
+      - migrate-make-to-cmake-build
+      # - restore-broken-pip-installation # fake apt
+      - rebuild-fastproc-for-python-3-13
+      - build-graphicsmagick-1-3-45
+      - migrate-fortran-mcsim-to-gfortran
+      - secure-postgres-schema-migration
+      - configure-apache-logging-and-rate-limit
+    exclude_task_names: []
+    image_registry: skills_vote
+    image_tag: "20260429"
+  - name: swebenchpro
+    version: "1.0"
+    download_dir: input/swebenchpro
+    registry_url: null
+    registry_path: null
+    task_names: []
+    exclude_task_names: []
+    image_registry: skills_vote
+    image_tag: "20260429"
+agents:
+  - name: codex
+    version: "0.125.0"
+dependencies:
+  - name: nvm
+    version: "v0.40.4"
+  - name: node
+    version: "22"

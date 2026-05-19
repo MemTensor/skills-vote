@@ -1,0 +1,33 @@
+jobs_dir: output
+job_name: swebenchpro_codex_gpt_5_2_medium_baseline__${now:%Y-%m-%d__%H-%M-%S}
+n_attempts: 1
+quiet: false
+n_concurrent_trials: 32
+retry:
+  max_retries: 3
+  exclude_exceptions:
+    - VerifierTimeoutError
+    - RewardFileNotFoundError
+    - RewardFileEmptyError
+    - VerifierOutputParseError
+agent_timeout_multiplier: 4.0
+environment:
+  type: docker
+  force_build: false
+  delete: false
+agents:
+  - import_path: skills_vote.harbor.agents:SkillsVoteCodex
+    model_name: openai/gpt-5.2
+    kwargs:
+      version: "0.125.0"
+      reasoning_effort: medium
+      reasoning_summary: auto
+      allowed_skills: []
+      allowed_plugins: []
+datasets:
+  - name: swebenchpro
+    version: "1.0"
+    download_dir: input/swebenchpro
+skills_vote:
+  register_import_paths:
+    - skills_vote.harbor.hooks:register_cost

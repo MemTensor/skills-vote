@@ -1,0 +1,108 @@
+jobs_dir: output
+job_name: tb_pro_codex_gpt_5_5_xhigh_search_offline_evolve_task_48_agg_4_ep_1__${now:%Y-%m-%d__%H-%M-%S}
+n_attempts: 1
+quiet: false
+n_concurrent_trials: 4
+retry:
+  max_retries: 3
+  exclude_exceptions:
+    - VerifierTimeoutError
+    - RewardFileNotFoundError
+    - RewardFileEmptyError
+    - VerifierOutputParseError
+agent_timeout_multiplier: 4.0
+environment:
+  type: docker
+  force_build: false
+  delete: false
+  mounts_json:
+    - type: bind
+      source: ${skills_vote.working_skills_dir}
+      target: /skills
+      read_only: true
+agents:
+  - import_path: skills_vote.harbor.agents:SkillsVoteCodex
+    model_name: openai/gpt-5.5
+    kwargs:
+      reasoning_effort: xhigh
+      reasoning_summary: auto
+      version: "0.125.0"
+      allowed_skills: []
+      allowed_plugins: []
+      recommend:
+        skills_dir: /skills
+        prompt_path: skills_vote.recommend.prompt:build
+datasets:
+  - name: terminal-bench-pro
+    version: "1.0"
+    download_dir: input/tb-pro
+    registry_url: null
+    registry_path: null
+    task_names:
+      # software-engineering
+      - dual-bash-python-config-parser
+      - build-grpc-user-profile-service
+      - polyglot-yaml-config-validator
+      - polyglot-bash-python-config-validator
+      - prove-nat-mult-commutativity-in-coq
+      - recover-git-reflog-commits
+      - polyglot-bash-python-config-parser
+      - polyglot-prime-generator
+      - advanced-poker-hand-classifier
+      # - optimize-triton-rope-kernel # pip install timeout
+      - implement-go-board-analyzer
+      - optimal-2x2x2-cube-solver
+      - polyglot-text-stats-script
+      - merge-git-bundles-and-implement-transform
+      - make-ascii-fits-keywords-case-insensitive
+      - merge-parser-branches
+      - cube-grid-cross-expansion
+      - fix-color-lib-hash-and-pickle
+      - implement-idcard-flask-api
+      - implement-sales-processor-engine
+      - python-prime-http-server
+      - mcts-solver-for-15-puzzle
+      - reverse-engineer-kvstore-binary-protocol
+      - build-prime-factorization-http-api
+      - schedule-multi-team-kickoff-meeting
+      # system-administration
+      - build-arm64-qemu-linux-with-custom-message
+      - cmake-build-for-cpp-console-app
+      - implement-depgraph-dependency-resolver
+      - build-qemu-arm-user-emulator
+      - optimize-portfolio-allocation
+      - configure-localhost-ssh-key-login
+      - compare-cmake-build-types-performance
+      - compile-postgresql-with-sanitizers
+      - configure-apache-analytics-virtualhost
+      - setup-ubuntu-vm-ssh-key-auth
+      - build-coq-from-source
+      - boot-debian-qemu-with-ssh-check
+      - generate-llvm-ir-with-dwarf-debug
+      - reproducible-latex-pdf-build-script
+      - secure-db-migration-and-wipe
+      - build-nginx-1-24-production-server
+      - resolve-react-peer-deps
+      - reverse-engineer-physics-simulator
+      - migrate-make-to-cmake-build
+      # - restore-broken-pip-installation # fake apt
+      - rebuild-fastproc-for-python-3-13
+      - build-graphicsmagick-1-3-45
+      - migrate-fortran-mcsim-to-gfortran
+      - secure-postgres-schema-migration
+      - configure-apache-logging-and-rate-limit
+skills_vote:
+  register_import_paths:
+    - skills_vote.harbor.hooks:register_cost
+    - skills_vote.harbor.hooks:register
+  codex_home: ${abspath:.skills_vote/.codex_gpt_5_5_xhigh}
+  working_skills_dir: ${abspath:${jobs_dir}/${job_name}/working_skills}
+  skill_backup_dir: ${abspath:${jobs_dir}/${job_name}/skills_backup}
+  feedback_prompt_path: skills_vote.feedback.prompt:build
+  evolve_prompt_path: skills_vote.evolve.prompt:build
+  evolve_timeout_sec: 1800
+  evolve_every_n_trials: 4
+  feedback_include_ground_truth: true
+  feedback_verifier_summary_extractors:
+    - pytest_stdout
+    - reward
