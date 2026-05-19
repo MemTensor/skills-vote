@@ -1,10 +1,13 @@
 [project]
 authors = [{ name = "MemTensor", email = "MemTensor@memtensor.cn" }]
 dependencies = [
+    "harbor==0.5.0",
+    "omegaconf==2.3.0",
+    "polars>=1.40.0,<2.0.0",
+    "pydantic>=2.13.3,<3.0.0",
+    "tomlkit>=0.14.0",
     "PyYAML>=6.0.3,<7.0.0",
     "claude-agent-sdk>=0.1.50,<0.2.0",
-    "polars>=1.39.3,<2.0.0",
-    "pydantic>=2.12.5,<3.0.0",
     "python-dotenv>=1.2.2,<2.0.0",
 ]
 description = "SkillsVote: The Next-Gen Agent-Native Skill Recommendation Engine"
@@ -12,7 +15,11 @@ license = { file = "LICENSE" }
 name = "skills_vote"
 readme = { file = "README.md", content-type = "text/markdown" }
 requires-python = ">=3.12"
-version = "1.0.0"
+version = "1.1.0"
+
+[project.scripts]
+skillsvote = "skills_vote.harbor.cli:main"
+svt = "skills_vote.harbor.cli:main"
 
 [build-system]
 build-backend = "uv_build"
@@ -30,13 +37,23 @@ module-name = "skills_vote"
 module-root = "src"
 
 [[tool.uv.index]]
+explicit = true
+name = "tencent"
+url = "https://mirrors.cloud.tencent.com/pypi/simple"
+
+[[tool.uv.index]]
 default = true
 name = "pypi"
 url = "https://pypi.org/simple"
 
 [dependency-groups]
-dev = [{ include-group = "format" }]
+dev = [
+    { include-group = "format" },
+    { include-group = "test" },
+]
 format = ["pre-commit", "ruff>=0.15.0,<0.16.0"]
+notebook = ["ipykernel", "ipywidgets"]
+test = ["pytest>=9.0.0,<10.0.0"]
 
 [tool.ruff]
 line-length = 88

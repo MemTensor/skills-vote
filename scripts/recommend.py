@@ -6,9 +6,10 @@ from pathlib import Path
 import yaml
 from dotenv import load_dotenv
 
-from skills_vote.recommend import recommend
+from skills_vote.recommend.demo import recommend
 
 load_dotenv()
+
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
