@@ -1,6 +1,8 @@
 ---
 name: skills-vote-local
 description: Use when retrieving the most relevant skills from a local or private skill library instead of relying on network-based skill discovery.
+metadata:
+  version: "1.0.0"
 ---
 
 # Skills Vote Local
