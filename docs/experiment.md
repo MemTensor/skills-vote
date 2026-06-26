@@ -5,37 +5,42 @@ The benchmark evaluation is built on [Harbor](https://github.com/harbor-framewor
 ## Repository Layout
 
 ```text
-.
+skills-vote
 ├── src/skills_vote/
-│   ├── harbor/                          # Harbor CLI wrapper, agent adapter, and hooks
+│   ├── harbor/                          
+│   │   ├── agents.py                    # SkillsVote agent
+│   │   ├── cli.py                       # SkillsVote CLI for running Harbor jobs
+│   │   └── hooks.py                     # Post-task stage integration into Harbor lifecycle
 │   ├── recommend/                       # Pre-task skill recommendation
-│   ├── feedback/                        # Post-task subtask attribution
+│   │   ├── codex.py                     # Recommendation implementation
+│   │   ├── model.py                     # Config and output models
+│   │   ├── prompt.py                    # Prompt templates
+│   │   └── utils.py                     
+│   ├── feedback/                        # Post-task attribution
 │   └── evolve/                          # Controlled skill evolution
 ├── scripts/
-│   ├── init_agent_configs.sh            # Creates `.skills_vote/.codex_*` homes
-│   ├── prebuild_images.py               # Downloads datasets and prebuilds task Docker images
+│   ├── init_agent_configs.sh            # Codex homes initialization
+│   ├── prebuild_images.py               # Datasets downloading and Docker images pre-building
 │   └── configs/
 │       ├── prebuild_images.yaml         # Dataset/image prebuild plan
 │       ├── tb_pro/                      # Terminal-Bench Pro configurations
-│       ├── tb2/                         # Terminal-Bench 2 configurations
-│       ├── swebenchpro/                 # SWE-Bench Pro baseline configurations
+│       ├── tb2/                         # Terminal-Bench 2.0 configurations
+│       ├── swebenchpro/                 # SWE-Bench Pro configurations
 │       └── swebenchpro_repos/           # SWE-Bench Pro per-repository configurations
 └── .skills_vote/                        # Generated Codex homes and skill directories
 ```
 
 ## Requirements
 
-Use an environment that satisfies the following requirements:
-
 * Python `>=3.12`, managed by `uv`.
 * Docker Engine on `amd64/x86`.
 * `tmux` and `tmuxp` for launching multi-job configuration files.
-* Network access to the model endpoint, benchmark dataset sources, and Docker registries.
-* An OpenAI-compatible API key for Codex model calls.
+* An API compatible with the `/responses` endpoint.
 
+> [!TIP]
 > The recommended hardware for the published configurations includes 32 CPU cores, 64 GB RAM, and a fast SSD. Dataset mirrors, Docker images, and experiment outputs may require approximately 2 TB of local storage. Smaller machines can also run the experiments by reducing runtime concurrency.
 
-## Installation
+## Setup
 
 Install the dependencies:
 
@@ -49,7 +54,7 @@ Create a local environment file:
 cp .env.example .env
 ```
 
-Fill in the following variables:
+Fill the following variables in `.env`:
 
 ```bash
 OPENAI_API_KEY=...
@@ -63,64 +68,51 @@ Initialize the Codex homes:
 bash scripts/init_agent_configs.sh
 ```
 
-This script creates `.skills_vote/.codex_gpt_5_4_mini`, `.skills_vote/.codex_gpt_5_2`, and `.skills_vote/.codex_gpt_5_5_xhigh`. It also writes `config.toml`, which includes project trust settings and disabled system-skill entries using absolute paths.
+> [!NOTE]
+> This script creates `.skills_vote/.codex_gpt_5_4_mini`, `.skills_vote/.codex_gpt_5_2`, and `.skills_vote/.codex_gpt_5_5_xhigh`. It also writes `config.toml` for disabling system skills of Codex.
 
-Prebuild the dataset images:
+Specify which datasets to set up in `scripts/configs/prebuild_images.yaml`:
 
-```bash
-uv run scripts/prebuild_images.py --cfg-path scripts/configs/prebuild_images.yaml
+```yaml
+max_workers: 32 # Number of parallel image builds
+datasets:
+  - name: terminal-bench
+    version: "2.0"
+    download_dir: input/tb2 # Directory for downloaded datasets
+    registry_url: null
+    registry_path: null
+    task_names: []  # Empty list means all tasks
+    exclude_task_names: []  # Exculding tasks from `task_names`
+
+agents:         # Pre-installed agent
+  - name: codex
+    version: "0.125.0"
+
+dependencies:   # Pre-installed dependencies
+  - name: nvm
+    version: "v0.40.4"
+  - name: node
+    version: "22"
 ```
 
-This downloads benchmark metadata and builds task images according to the published prebuild plan. The first run may take several hours, depending on network speed.
+Download datasets and build Docker images, which may take a long time:
+
+```bash
+uv run scripts/prebuild_images.py
+```
 
 ## Experiment Settings
 
-<table style="width: 100%; table-layout: fixed;">
-  <colgroup>
-    <col style="width: 9.5em;">
-    <col>
-  </colgroup>
-  <thead>
-    <tr>
-      <th style="white-space: nowrap;">Setting</th>
-      <th>Meaning</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td style="white-space: nowrap;">w/o Skills</td>
-      <td style="overflow-wrap: break-word;">Base solver w/o an external skill library.</td>
-    </tr>
-    <tr>
-      <td style="white-space: nowrap;">Online</td>
-      <td style="overflow-wrap: break-word;">Start from an empty skill library and update it along the test-time task stream.</td>
-    </tr>
-    <tr>
-      <td style="white-space: nowrap;">&emsp;SkillsVote</td>
-      <td style="overflow-wrap: break-word;">Pre-task skills recommendation and post-execution attribution and evolution.</td>
-    </tr>
-    <tr>
-      <td style="white-space: nowrap;">&emsp;ReasoningBank</td>
-      <td style="overflow-wrap: break-word;">Pre-task memory retrieval and post-execution updating following the ReasoningBank protocol.</td>
-    </tr>
-    <tr>
-      <td style="white-space: nowrap;">&emsp;skill-creator</td>
-      <td style="overflow-wrap: break-word;">Post-execution skill generation from completed trajectories with <code>skill-creator</code> skill.</td>
-    </tr>
-    <tr>
-      <td style="white-space: nowrap;">Offline</td>
-      <td style="overflow-wrap: break-word;">Start from a frozen skill library and use it only through pre-task recommendation on the test set.</td>
-    </tr>
-    <tr>
-      <td style="white-space: nowrap;">&emsp;TB-Pro</td>
-      <td style="overflow-wrap: break-word;">Skill library is built from historical Terminal-Bench Pro tasks trajectories.</td>
-    </tr>
-    <tr>
-      <td style="white-space: nowrap;">&emsp;Curated</td>
-      <td style="overflow-wrap: break-word;">Skill library contains approximately 10k curated skills selected by the SkillsVote collecting-and-profiling pipeline from open-source skills.</td>
-    </tr>
-  </tbody>
-</table>
+| Setting | Meaning |
+| --- | --- |
+| w/o Skills | Base solver w/o an external skill library. |
+| Online | Start from an empty skill library and update it along the test-time task stream. |
+| &emsp;SkillsVote | Pre-task skills recommendation and post-execution attribution and evolution. |
+| &emsp;ReasoningBank | Pre-task memory retrieval and post-execution updating following the ReasoningBank protocol. |
+| &emsp;skill-creator | Post-execution skill generation from completed trajectories with <code>skill-creator</code> skill. |
+| Offline | Start from a frozen skill library and use it only through pre-task recommendation on the test set. |
+| &emsp;TB-Pro | Skill library is built from historical Terminal-Bench Pro tasks trajectories. |
+| &emsp;Curated | ~10k open source skills curated by the SkillsVote collecting and profiling pipeline. |
 
 ## Configurations
 
@@ -128,16 +120,32 @@ Each experiment YAML file includes Harbor runtime configurations and SkillsVote 
 
 ### Harbor Configurations
 
-* `n_attempts`: the number of trials executed for each task.
-* `n_concurrent_trials`: the number of trials that Harbor may run simultaneously.
-* `retry.max_retries`: the maximum number of retries for each trial when errors occur.
-* `retry.exclude_exceptions`: exception types excluded from retry. These failures are treated as reflecting agent capability and are not retried.
-* `agent_timeout_multiplier`: a multiplier applied to the task's default agent-step timeout.
-* `environment.mounts_json`: directories mounted into the Docker container. We use this option to mount the skill directory into the task container for recommendation.
-* `agents[0].model_name`: the model identifier passed to the agent provider.
-* `agents[0].kwargs.reasoning_effort`: the reasoning setting used for Codex.
-* `agents[0].kwargs.allowed_skills`: the Codex system skills that are allowed during execution. By default, all system skills are disabled to minimize their influence on task execution.
-* `datasets`: the dataset paths to run. By default, experiments use the prebuilt dataset images.
+```yaml
+n_attempts: 1  # Trials per task
+n_concurrent_trials: 32  # Concurrent trials
+retry:
+  max_retries: 3  # Retry limit
+  exclude_exceptions:  # Non-retried verifier failures
+    - VerifierTimeoutError      # These four types of failures  
+    - RewardFileNotFoundError   # are treated as reflecting agent capability,
+    - RewardFileEmptyError      # so they are not retried.
+    - VerifierOutputParseError
+agent_timeout_multiplier: 4.0  # Agent-step timeout multiplier applied to the task's default value
+environment:
+  type: docker
+  mounts_json:  # Directories mounted into task containers, for skill recommendation
+    ...
+agents:
+  - import_path: skills_vote.harbor.agents:SkillsVoteCodex
+    model_name: openai/gpt-5.4-mini
+    kwargs:
+      reasoning_effort: medium  # Codex reasoning setting
+      allowed_skills: []  # Empty for disabling Codex system skills
+datasets:
+  - name: swebenchpro
+    version: "1.0"
+    download_dir: input/swebenchpro  # Dataset path
+```
 
 ### SkillsVote Configurations
 
