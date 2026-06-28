@@ -8,7 +8,9 @@ class RecommendConfig(BaseModel):
 
     prompt_path: str
     skills_dir: str
+    install_skills_dir: str | None = None
     default_top_k: int = Field(default=5)
+    skills_vote_library_manifest: str | None = None
 
 
 class RecommendOutput(BaseModel):

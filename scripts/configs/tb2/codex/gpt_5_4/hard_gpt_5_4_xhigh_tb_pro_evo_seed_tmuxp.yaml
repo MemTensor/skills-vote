@@ -1,0 +1,18 @@
+session_name: tb2_hard_gpt_5_4_xhigh_tb_pro_evo_seed
+start_directory: ../../../../..
+before_script: bash -lc 'cd "$(git rev-parse --show-toplevel)" && mkdir -p .skills_vote/.tmuxp && date +%Y-%m-%d__%H-%M-%S > .skills_vote/.tmuxp/tb2_hard_gpt_5_4_xhigh_tb_pro_evo_seed.timestamp'
+shell_command_before:
+  - cd "$(git rev-parse --show-toplevel)"
+  - export SVT_RUN_TIMESTAMP="$(cat .skills_vote/.tmuxp/tb2_hard_gpt_5_4_xhigh_tb_pro_evo_seed.timestamp)"
+  - export BASELINE_CONFIG="scripts/configs/tb2/codex/gpt_5_4/hard_baseline_gpt_5_4_xhigh.yaml"
+  - export RECOMMEND_SEED_CONFIG="scripts/configs/tb2/codex/gpt_5_4/hard_recommend_seed_tb_pro_evo_gpt_5_4_mini_gpt_5_4_xhigh.yaml"
+  - printf 'SVT_RUN_TIMESTAMP=%s\n' "$SVT_RUN_TIMESTAMP"
+windows:
+  - window_name: baseline
+    panes:
+      - shell_command:
+          - uv run svt run -c "$BASELINE_CONFIG" -y job_name=tb2_codex_hard_baseline_gpt_5_4_xhigh_${SVT_RUN_TIMESTAMP}
+  - window_name: recommend-seed
+    panes:
+      - shell_command:
+          - uv run svt run -c "$RECOMMEND_SEED_CONFIG" -y job_name=tb2_codex_hard_recommend_seed_tb_pro_evo_gpt_5_4_mini_gpt_5_4_xhigh_${SVT_RUN_TIMESTAMP}

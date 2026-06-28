@@ -16,6 +16,10 @@ from tenacity import (
 )
 
 from skills_vote.recommend.model import RecommendConfig, RecommendOutput
+from skills_vote.recommend.skill_library import (
+    build_install_all_skills_command,
+    build_install_selected_skills_command,
+)
 from skills_vote.utils import build_prompt_template
 
 
@@ -52,6 +56,8 @@ async def step_recommend(
     cli_flags_arg: str,
 ) -> RecommendOutput | None:
     skills_dir = recommend_config.skills_dir
+    install_skills_dir = recommend_config.install_skills_dir
+    skills_vote_library_manifest = recommend_config.skills_vote_library_manifest
     recommendation_dir = agent.logs_dir.parent / "recommendation"
     recommendation_dir.mkdir(parents=True, exist_ok=True)
 
@@ -78,10 +84,11 @@ async def step_recommend(
         f"rm -rf /tmp/codex-secrets {shlex.quote(env_codex_home)} "
         f"{shlex.quote(env_recommendation_dir)}"
     )
-    install_all_skills_command = (
-        'mkdir -p "$CODEX_HOME/skills"\n'
-        f"cp -R {shlex.quote(skills_dir.rstrip('/') + '/.')} "
-        '"$CODEX_HOME/skills"'
+    install_all_skills_command = build_install_all_skills_command(
+        skills_dir=skills_dir,
+        install_skills_dir=install_skills_dir,
+        agent_home_env_var="CODEX_HOME",
+        skills_vote_library_manifest=skills_vote_library_manifest,
     )
 
     auth_json_path = agent._resolve_auth_json_path()
@@ -137,16 +144,28 @@ async def step_recommend(
         local_dir=recommendation_dir,
     )
 
+    system_prompt_kwargs: dict[str, Any] = {
+        "default_top_k": recommend_config.default_top_k,
+    }
+    user_prompt_kwargs: dict[str, Any] = {
+        "skills_root": skills_dir,
+        "user_query": instruction,
+    }
+    system_prompt_key = (
+        "skills_vote_library_system_prompt"
+        if skills_vote_library_manifest is not None
+        else "system_prompt"
+    )
+
     system_prompt = build_prompt_template(
         recommend_config.prompt_path,
-        key="system_prompt",
-        default_top_k=recommend_config.default_top_k,
+        key=system_prompt_key,
+        **system_prompt_kwargs,
     )
     user_prompt = build_prompt_template(
         recommend_config.prompt_path,
         key="user_prompt",
-        skills_root=skills_dir,
-        user_query=instruction,
+        **user_prompt_kwargs,
     )
 
     output_target = f"{env_recommendation_dir}/{output_path.name}"
@@ -258,13 +277,16 @@ async def step_recommend(
 
     try:
         if recommendation.skill_names:
-            commands = ['mkdir -p "$CODEX_HOME/skills"']
-            for skill_name in recommendation.skill_names:
-                source = f"{skills_dir.rstrip('/')}/{skill_name}"
-                commands.append(f'cp -R {shlex.quote(source)} "$CODEX_HOME/skills"/')
+            commands = build_install_selected_skills_command(
+                skill_names=recommendation.skill_names,
+                skills_dir=skills_dir,
+                install_skills_dir=install_skills_dir,
+                agent_home_env_var="CODEX_HOME",
+                skills_vote_library_manifest=skills_vote_library_manifest,
+            )
             await agent.exec_as_agent(
                 environment,
-                command="\n".join(commands),
+                command=commands,
                 env=main_env,
             )
     except RuntimeError as exc:

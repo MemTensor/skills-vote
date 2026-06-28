@@ -1,0 +1,19 @@
+split_names:
+  - full
+  - 50k
+  - 20k
+  - 10k
+  - 5k
+  - 2k
+  - 1k
+model: gpt-5.4-mini
+thinking_effort: xhigh
+recommend_top_k: 10
+metric_top_k: 10
+skill_root: input/skillrouter/skills
+codex_workspace: /tmp/skills
+output_dir: output/skillrouter/skills_vote
+datetime: ${now:%Y-%m-%d__%H-%M-%S}
+num_recommend_concurrency: 32
+recommend_timeout: 7200
+num_persist_batch_size: 8
