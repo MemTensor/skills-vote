@@ -41,7 +41,7 @@ skills_vote:
   register_import_paths:
     - skills_vote.harbor.hooks:register_cost
     - skills_vote.harbor.hooks:register
-  codex_home: ${abspath:.skills_vote/.codex_gpt_5_4_mini}
+  codex_home: ${abspath:.skills_vote/.codex}
   working_skills_dir: ${abspath:${jobs_dir}/${job_name}/working_skills}
   skill_backup_dir: ${abspath:${jobs_dir}/${job_name}/skills_backup}
   feedback_prompt_path: skills_vote.feedback.prompt:build

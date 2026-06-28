@@ -1,0 +1,50 @@
+jobs_dir: output
+job_name: reasoningbank_swebenchpro_repos_codex_gpt_5_2_medium_flipt_io_flipt_search_online_evolve__${now:%Y-%m-%d__%H-%M-%S}
+n_attempts: 1
+quiet: false
+n_concurrent_trials: 1
+retry:
+  max_retries: 3
+  exclude_exceptions:
+  - VerifierTimeoutError
+  - RewardFileNotFoundError
+  - RewardFileEmptyError
+  - VerifierOutputParseError
+agent_timeout_multiplier: 4.0
+environment:
+  type: docker
+  force_build: false
+  delete: false
+agents:
+- import_path: skills_vote.reasoningbank.codex:ReasoningBankCodex
+  model_name: openai/gpt-5.2
+  kwargs:
+    version: 0.125.0
+    reasoning_effort: medium
+    reasoning_summary: auto
+    allowed_skills: []
+    allowed_plugins: []
+datasets:
+- name: swebenchpro
+  version: '1.0'
+  download_dir: input/swebenchpro
+  task_names:
+  - instance_flipt-io__flipt-*
+skills_vote:
+  register_import_paths:
+  - skills_vote.harbor.hooks:register_cost
+  - skills_vote.harbor.hooks:register
+  codex_home: ${abspath:.skills_vote/.codex_gpt_5_2}
+  feedback_verifier_summary_extractors:
+  - output_json
+  - reward
+  reasoningbank:
+    memory_path: ${abspath:${jobs_dir}/${job_name}/reasoningbank/memory.jsonl}
+    retrieval_map_path: ${abspath:.skills_vote/reasoningbank/swebenchpro/flipt_io_flipt/retrieval_map.jsonl}
+    prompt_path: skills_vote.reasoningbank.prompt:build
+    update_timeout_sec: 1800
+    update_litellm_max_attempts: 3
+    update_litellm_retry_wait_sec: 10
+    update_max_trajectory_chars: 1100000
+    update_max_tokens: 10240
+    max_memory_items_per_trial: 3
