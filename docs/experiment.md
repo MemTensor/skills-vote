@@ -16,13 +16,16 @@ skills-vote
 │   │   ├── model.py                     # Config and output models
 │   │   ├── prompt.py                    # Prompt templates
 │   │   └── utils.py                     
+│   ├── skillrouter/                     # SkillRouter evaluation
 │   ├── feedback/                        # Post-task attribution
 │   └── evolve/                          # Controlled skill evolution
 ├── scripts/
 │   ├── init_agent_configs.sh            # Codex homes initialization
 │   ├── prebuild_images.py               # Datasets downloading and Docker images pre-building
+│   ├── skillrouter/                     # SkillRouter data preparation and evaluation
 │   └── configs/
 │       ├── prebuild_images.yaml         # Dataset/image prebuild plan
+│       ├── skillrouter/                 # SkillRouter evaluation configurations
 │       ├── tb_pro/                      # Terminal-Bench Pro configurations
 │       ├── tb2/                         # Terminal-Bench 2.0 configurations
 │       ├── swebenchpro/                 # SWE-Bench Pro configurations
@@ -38,7 +41,7 @@ skills-vote
 * An API compatible with the `/responses` endpoint.
 
 > [!TIP]
-> The recommended hardware for the published configurations includes 32 CPU cores, 64 GB RAM, and a fast SSD. Dataset mirrors, Docker images, and experiment outputs may require approximately 2 TB of local storage. Smaller machines can also run the experiments by reducing runtime concurrency.
+> The recommended hardware for the published configurations includes 32 CPU cores, 64 GB RAM, and a fast SSD. Datasets and experiment outputs may require approximately 2 TB of local storage. Systems with lower hardware specifications can run experiments by reducing concurrency.
 
 ## Setup
 
@@ -172,7 +175,7 @@ The session of solver agent is copied into a newly created `.codex` directory an
 ```yaml
 skills_vote:
   register_import_paths:
-    - skills_vote.harbor.hooks:register   # Register hooks that trigger post-execution attribution and evolution
+    - skills_vote.harbor.hooks:register   # Register hooks that trigger post-task attribution and evolution
   codex_home: ${abspath:.skills_vote/.codex}    # Local Codex directory whose authentication files are reused for attribution
   feedback_prompt_path: skills_vote.feedback.prompt:build   # Attribution prompt
   feedback_verifier_summary_extractors:   # Benchmark-specific reward extractors
@@ -335,6 +338,49 @@ skills_vote:
   skill_backup_dir: ${abspath:${jobs_dir}/${job_name}/skills_backup}
   skill_creator_prompt_path: skills_vote.evolve.skill_creator_prompt:build  # Simple prompt designed for using `skill-creator`
   skill_creator_timeout_sec: 1800
+```
+
+### Routing over Large Skill Libraries
+
+**SkillsVote**
+
+Evaluate recommendation of SkillsVote on large skill libraries:
+
+```yaml
+split_names:           # The 1k ~ full library splits of SkillRouter's public set.
+  - 1k
+  ...
+  - full
+model: gpt-5.4-mini    # Codex model used as the recommendation agent.
+thinking_effort: xhigh 
+recommend_top_k: 10    # Number of skills returned by SkillsVote.
+metric_top_k: 10       
+skill_root: input/skillrouter/skills  # Prebuilt markdown-only skill corpus.
+codex_workspace: /tmp/skills          # Temporary workspace exposed to Codex for search.
+output_dir: output/skillrouter/skills_vote
+datetime: ${now:%Y-%m-%d__%H-%M-%S}
+num_recommend_concurrency: 32  # Concurrent recommendation tasks.
+recommend_timeout: 7200        # Timeout in seconds for one recommendation run.
+num_persist_batch_size: 8      
+```
+
+**SkillRouter**
+
+Reproduce the released SkillRouter embedding and reranker pipeline:
+
+```yaml
+split_names:           # The 1k ~ full library splits of SkillRouter's public set.
+  - 1k
+  ...
+  - full
+retrieve_top_k: 50    # Number of skills kept after embedding retrieval.
+rerank_top_n: 20      # Number of retrieved skills passed to the reranker.
+metric_top_k: 10      
+output_dir: output/skillrouter/skillrouter
+datetime: ${now:%Y-%m-%d__%H-%M-%S}
+num_rerank_concurrency: 8  # Concurrent rerank requests.
+rerank_timeout: 60         # Timeout in seconds for one rerank request.
+num_persist_batch_size: 8
 ```
 
 ## Launch Experiments
