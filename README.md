@@ -45,6 +45,7 @@ SkillsVote treats skills as lifecycle-managed artifacts. It connects collection,
 
 ## 📰 Latest News
 
+- 🎉 **[2026-10-01] EMNLP 2026 Acceptance.** SkillsVote has been accepted to the **[EMNLP 2026](https://2026.emnlp.org/) main conference** for a **poster presentation**!
 - 📄 **[2026-05-19] Technical Report.** We released the SkillsVote technical report on arXiv: [arXiv:2605.18401](https://arxiv.org/abs/2605.18401).
 - 🧭 **[2026-05-18] Local Skill Integration.** We released the first version of `skills-vote-local`, enabling local/private skill recommendation with configurable retrieval strategies.
 - 🌅 **[2026-04-09] Special Share.** Core contributor's share on [Linux.do](https://linux.do).
